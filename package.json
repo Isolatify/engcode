@@ -10,13 +10,19 @@
     "dist",
     "docs",
     "examples",
-    "README.md"
+    "playground",
+    "editor",
+    "scripts",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/tests/",
-    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-exclude=\"dist/src/cli.js\" dist/tests/",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=80 --test-coverage-functions=90 --test-coverage-exclude=\"dist/src/cli.js\" --test-coverage-exclude=\"dist/src/playground.js\" dist/tests/",
+    "check:docs": "node scripts/check-doc-links.mjs",
+    "package:release": "node scripts/package-release.mjs",
     "engcode": "node dist/src/cli.js"
   },
   "engines": {

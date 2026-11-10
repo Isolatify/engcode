@@ -152,6 +152,77 @@ test("notes app saves a note and reloads it on the next open", async () => {
   second.window.close();
 });
 
+test("notes-desktop app creates, opens, pins, and saves notes", async () => {
+  const { document, window } = loadExample("notes-desktop");
+  await flush();
+
+  const title = pick<HTMLInputElement>(document, '[data-eng-id="title"]');
+  const body = pick<HTMLTextAreaElement>(document, '[data-eng-id="body"]');
+  const save = pick<HTMLButtonElement>(document, '[data-eng-id="save button"]');
+  const newNote = pick<HTMLButtonElement>(document, '[data-eng-id="new button"]');
+  const pin = pick<HTMLButtonElement>(document, '[data-eng-id="pin button"]');
+  const list = pick<HTMLElement>(document, '[data-eng-id="notes"]');
+
+  title.value = "Grocery list";
+  body.value = "Milk and apples";
+  save.click();
+  await flush();
+  assert.match(list.textContent ?? "", /Grocery list/);
+  assert.equal(
+    pick<HTMLElement>(document, '[data-eng-id="editor heading"]').textContent,
+    "Grocery list",
+  );
+  assert.match(
+    list.querySelector('li[aria-current="true"]')?.textContent ?? "",
+    /Grocery list/,
+  );
+  assert.ok(window.localStorage.getItem("engcode:Fluent Notes:notes"));
+
+  newNote.click();
+  await flush();
+  assert.equal(title.value, "");
+  assert.equal(body.value, "");
+
+  const firstItem = list.querySelector("li");
+  assert.ok(firstItem);
+  firstItem!.click();
+  await flush();
+  assert.equal(title.value, "Grocery list");
+  assert.equal(body.value, "Milk and apples");
+
+  pin.click();
+  await flush();
+  assert.match(list.textContent ?? "", /Grocery list/);
+  assert.equal(
+    list.querySelector('li[aria-current="true"]')?.textContent,
+    "📌 Grocery list",
+  );
+  const stored = JSON.parse(
+    window.localStorage.getItem("engcode:Fluent Notes:notes") ?? "[]",
+  ) as Array<{ title: string; pinned: boolean }>;
+  assert.equal(stored[0]?.title, "Grocery list");
+  assert.equal(stored[0]?.pinned, true);
+
+  const saved = window.localStorage.getItem("engcode:Fluent Notes:notes")!;
+  window.close();
+
+  // Reopening restores the saved notes and highlights the one that is open.
+  const second = loadExample("notes-desktop", false);
+  second.window.localStorage.setItem("engcode:Fluent Notes:notes", saved);
+  startApp(second.build.definition, { startTimers: false });
+  await flush();
+  const secondList = pick<HTMLElement>(second.document, '[data-eng-id="notes"]');
+  assert.equal(
+    secondList.querySelector('li[aria-current="true"]')?.textContent,
+    "📌 Grocery list",
+  );
+  assert.equal(
+    pick<HTMLInputElement>(second.document, '[data-eng-id="title"]').value,
+    "Grocery list",
+  );
+  second.window.close();
+});
+
 test("portfolio app shows a toast when the button is clicked", async () => {
   const { document, window } = loadExample("portfolio");
   const button = pick<HTMLButtonElement>(document, '[data-eng-id="hello button"]');

@@ -1,0 +1,595 @@
+note: examples/notes-desktop/main.eng
+note: A Windows 11 styled desktop notebook. Open it with: engcode app examples/notes-desktop
+
+app "Fluent Notes":
+    page "Home":
+        row called "app shell":
+            column called "sidebar":
+                row called "brand":
+                    text "🗒️" called "brand icon"
+                    column called "brand words":
+                        heading "Fluent Notes" level 2 called "app name"
+                        text "Build with Simple English" called "tagline"
+                    end
+                end
+                input called "search" with label "Search notes" and hint "Search your notes"
+                row called "new row":
+                    button "+ New note" called "new button"
+                    text count label called "note count"
+                end
+                list called "notes" showing visible notes
+                text "Your first note is one click away." called "empty hint"
+                text "Stored on this device with EngCode." called "sidebar footer"
+            end
+            column called "editor":
+                row called "window bar":
+                    text "Local notebook" called "window title"
+                    text "Windows 11 inspired" called "window subtitle"
+                end
+                row called "editor head":
+                    column called "editor titles":
+                        text "Current note" called "eyebrow"
+                        heading editor heading level 2 called "editor heading"
+                    end
+                    row called "editor actions":
+                        button "Pin" called "pin button"
+                        button "Delete" called "delete button"
+                    end
+                end
+                row called "meta row":
+                    text updated label called "updated label"
+                    text pin label called "pin label"
+                end
+                input called "title" with label "Title" and hint "Give this note a title"
+                text area called "body" with label "Note" and hint "Start writing..."
+                divider
+                row called "status row":
+                    button "Save note" called "save button"
+                    text status message called "status message"
+                end
+            end
+        end
+    end
+end
+
+theme "Fluent Light":
+    accent is #0067c0
+    background is #f3f3f3
+    surface is #fbfbfb
+    text is #1b1b1b
+    muted is #5f5f5f
+    border is #e1e1e1
+    success is #0f7b0f
+    danger is #c42b1c
+    font is windows
+    heading font is windows display
+    corner radius is 16
+    shadow is soft
+    panel is rgba(255, 255, 255, 0.7)
+    sidebar is rgba(246, 246, 246, 0.78)
+    editor is rgba(255, 255, 255, 0.86)
+    field is rgba(255, 255, 255, 0.66)
+end
+theme "Fluent Dark" in dark mode:
+    accent is #60cdff
+    background is #202020
+    surface is #2c2c2c
+    text is #ffffff
+    muted is #b8b8b8
+    border is #3a3a3a
+    success is #6ccb5f
+    danger is #ff99a4
+    panel is rgba(44, 44, 44, 0.72)
+    sidebar is rgba(32, 32, 32, 0.76)
+    editor is rgba(40, 40, 40, 0.86)
+    field is rgba(58, 58, 58, 0.6)
+    shadow is medium
+end
+
+style everything:
+    background is background
+    text color is text
+    font is font
+    line height is 1.45
+    min height is 100vh
+end
+
+style headings:
+    font is heading font
+    font weight is 600
+    text color is text
+end
+
+style inputs:
+    background is field
+    border is 1 solid border
+    rounded corners of 8
+    padding is 10
+    font size is 14
+    transition is 0.2 seconds
+    when focused:
+        border color is accent
+        shadow is glow
+    end
+end
+
+style "app shell":
+    background is panel
+    border is 1 solid border
+    rounded corners of 18
+    shadow is medium
+    padding is 0
+    gap is 0
+    layout is row
+    align items is stretch
+    wrap is nowrap
+    min height is 86vh
+    overflow is hidden
+    animation is fade in over 0.35 seconds
+end
+
+style "sidebar":
+    width is 330
+    min width is 280
+    padding is 22
+    gap is 14
+    background is sidebar
+    border is 0
+    animation is slide right over 0.45 seconds
+end
+
+style "editor":
+    flex grow is 1
+    min width is 0
+    padding is 28
+    gap is 14
+    background is editor
+    animation is slide up over 0.45 seconds
+end
+
+style "brand":
+    gap is 12
+    align items is center
+    wrap is nowrap
+end
+style "brand icon":
+    font size is 26
+    line height is 1
+end
+style "brand words":
+    gap is 2
+end
+style "app name":
+    font size is 18
+    margin is 0
+end
+style "tagline":
+    font size is 12
+    text color is muted
+end
+
+style "search":
+    width is full
+end
+style "new row":
+    gap is 10
+    justify content is space between
+    wrap is nowrap
+end
+style "new button":
+    background is accent
+    text color is background
+    border is 0
+    rounded corners of 8
+    padding is 10
+    font weight is 600
+    shadow is soft
+    transition is 0.2 seconds
+    when mouse is over:
+        shadow is medium
+    end
+    when pressed:
+        opacity is 0.9
+    end
+end
+style "note count":
+    font size is 12
+    text color is muted
+end
+
+style "notes":
+    background is transparent
+    max height is 46vh
+    overflow is auto
+    animation is fade in over 0.3 seconds
+end
+style "empty hint":
+    font size is 13
+    text color is muted
+    padding is 8
+    line height is 1.5
+end
+style "sidebar footer":
+    font size is 11
+    text color is muted
+end
+
+style "window bar":
+    gap is 10
+    align items is center
+    min height is 24
+end
+style "window title":
+    font size is 12
+    font weight is 600
+    text color is muted
+    text transform is uppercase
+    letter spacing is 1
+end
+style "window subtitle":
+    font size is 12
+    text color is muted
+end
+
+style "editor head":
+    justify content is space between
+    align items is start
+    gap is 12
+end
+style "editor titles":
+    gap is 2
+end
+style "eyebrow":
+    font size is 11
+    font weight is 600
+    text color is muted
+    text transform is uppercase
+    letter spacing is 1
+end
+style "editor heading":
+    font size is 26
+    margin is 0
+end
+style "editor actions":
+    gap is 8
+    wrap is nowrap
+end
+
+style "pin button":
+    background is field
+    text color is text
+    border is 1 solid border
+    rounded corners of 6
+    padding is 8
+    font size is 13
+    transition is 0.2 seconds
+    when mouse is over:
+        border color is accent
+        shadow is soft
+    end
+end
+style "delete button":
+    background is transparent
+    text color is danger
+    border is 0
+    rounded corners of 6
+    padding is 8
+    font size is 13
+    transition is 0.2 seconds
+    when mouse is over:
+        background is danger
+        text color is background
+    end
+end
+
+style "meta row":
+    gap is 14
+end
+style "updated label":
+    font size is 12
+    text color is muted
+end
+style "pin label":
+    font size is 12
+    text color is muted
+end
+
+style "title":
+    background is transparent
+    border is 0
+    padding is 4
+    font size is 22
+    font weight is 600
+    when focused:
+        background is field
+        shadow is soft
+    end
+end
+style "body":
+    min height is 42vh
+    background is transparent
+    border is 0
+    padding is 4
+    font size is 15
+    line height is 1.7
+    when focused:
+        background is field
+        rounded corners of 8
+        shadow is soft
+    end
+end
+
+style "status row":
+    justify content is space between
+    align items is center
+    gap is 12
+end
+style "save button":
+    background is accent
+    text color is background
+    border is 0
+    rounded corners of 6
+    padding is 10
+    font weight is 600
+    shadow is soft
+    transition is 0.2 seconds
+    when mouse is over:
+        shadow is medium
+    end
+    when pressed:
+        opacity is 0.9
+    end
+end
+style "status message":
+    flex grow is 1
+    text color is muted
+    font size is 12
+end
+
+style "app shell" on small screens:
+    wrap is wrap
+    min height is auto
+end
+style "sidebar" on small screens:
+    width is full
+    min width is 0
+end
+style "editor" on small screens:
+    padding is 18
+end
+style "notes" on small screens:
+    max height is 30vh
+end
+
+keep track of all notes as an empty list
+keep track of visible notes as an empty list
+keep track of selected entry as an empty table
+keep track of editing index as 0
+keep track of note title as ""
+keep track of note body as ""
+keep track of search text as ""
+keep track of status message as "Ready when you are."
+keep track of count label as "0 notes"
+keep track of updated label as "Not saved yet"
+keep track of pin label as "Not pinned"
+keep track of editor heading as "New note"
+
+define refresh list:
+    set needle to lowercase of search text
+    if needle is empty:
+        set visible notes to all notes
+    otherwise:
+        set visible notes to an empty list
+        for each note in all notes:
+            if lowercase of note's title contains needle or lowercase of note's body contains needle:
+                add note to visible notes
+            end
+        end
+    end
+    if length of all notes is 1:
+        set count label to "1 note"
+    otherwise:
+        set count label to text of (length of all notes) plus " notes"
+    end
+    if length of visible notes is 0:
+        hide "notes"
+        show "empty hint"
+        if length of all notes is 0:
+            change text of "empty hint" to "Your first note is one click away."
+        otherwise:
+            change text of "empty hint" to "No notes match your search."
+        end
+    otherwise:
+        show "notes"
+        hide "empty hint"
+    end
+end
+
+define find current:
+    set editing index to 0
+    count from 1 to length of all notes as place:
+        if (item place of all notes) is selected entry:
+            set editing index to place
+        end
+    end
+end
+
+define open note with spot:
+    if spot is at least 1 and spot is at most (length of all notes):
+        set editing index to spot
+        set selected entry to item spot of all notes
+        set note title to selected entry's title
+        set note body to selected entry's body
+        change value of "title" to note title
+        change value of "body" to note body
+        change value of "notes" to selected entry
+        set editor heading to note title
+        set updated label to "Edited " plus selected entry's updated
+        if selected entry's pinned is yes:
+            set pin label to "Pinned to the top"
+        otherwise:
+            set pin label to "Not pinned"
+        end
+        set status message to "Opened note " plus text of spot plus "."
+    end
+end
+
+define start fresh:
+    set editing index to 0
+    set selected entry to an empty table
+    set note title to ""
+    set note body to ""
+    set search text to ""
+    change value of "search" to ""
+    change value of "title" to ""
+    change value of "body" to ""
+    clear "notes"
+    set editor heading to "New note"
+    set updated label to "Not saved yet"
+    set pin label to "Not pinned"
+    set status message to "New note. Write something, then press Save."
+end
+
+define tidy notes:
+    set pinned notes to an empty list
+    set loose notes to an empty list
+    for each note in all notes:
+        if note's pinned is yes:
+            add note to pinned notes
+        otherwise:
+            add note to loose notes
+        end
+    end
+    set all notes to an empty list
+    for each note in pinned notes:
+        add note to all notes
+    end
+    for each note in loose notes:
+        add note to all notes
+    end
+end
+
+when the page opens:
+    load "notes" from the device and save it as stored notes
+    if stored notes is not nothing:
+        set all notes to stored notes
+    end
+    for each note in all notes:
+        if note's pinned is nothing:
+            set note's pinned to no
+        end
+        if note's updated is nothing:
+            set note's updated to "Saved earlier"
+        end
+    end
+    refresh list
+    if length of all notes is greater than 0:
+        open note 1
+    otherwise:
+        start fresh
+        set status message to "Ready. Press New note to begin."
+    end
+end
+
+when "new button" is clicked:
+    start fresh
+    refresh list
+end
+
+when the user types in "search":
+    set search text to value of "search"
+    refresh list
+end
+
+when "notes" is clicked:
+    set selected entry to value of "notes"
+    if selected entry is not nothing:
+        find current
+        if editing index is greater than 0:
+            set note title to selected entry's title
+            set note body to selected entry's body
+            change value of "title" to note title
+            change value of "body" to note body
+            set editor heading to note title
+            set updated label to "Edited " plus selected entry's updated
+            if selected entry's pinned is yes:
+                set pin label to "Pinned to the top"
+            otherwise:
+                set pin label to "Not pinned"
+            end
+            set status message to "Opened note " plus text of editing index plus "."
+        end
+    end
+end
+
+when "save button" is clicked:
+    set note title to trim of value of "title"
+    set note body to value of "body"
+    if note title is empty:
+        set note title to "Untitled note"
+        change value of "title" to note title
+    end
+    set stamp to format of now with "HH:mm"
+    if editing index is greater than 0 and editing index is at most (length of all notes):
+        set selected entry to item editing index of all notes
+        set selected entry's title to note title
+        set selected entry's body to note body
+        set selected entry's updated to stamp
+    otherwise:
+        set selected entry to a table with title note title, body note body, pinned no, updated stamp
+        add selected entry to all notes
+        find current
+    end
+    set editor heading to note title
+    set updated label to "Saved at " plus stamp
+    if selected entry's pinned is yes:
+        set pin label to "Pinned to the top"
+    otherwise:
+        set pin label to "Not pinned"
+    end
+    save all notes to the device as "notes"
+    refresh list
+    change value of "notes" to selected entry
+    set status message to "Saved to this device."
+end
+
+when "pin button" is clicked:
+    if editing index is greater than 0 and editing index is at most (length of all notes):
+        if selected entry's pinned is yes:
+            set selected entry's pinned to no
+            set pin label to "Not pinned"
+            set status message to "Note unpinned."
+        otherwise:
+            set selected entry's pinned to yes
+            set pin label to "Pinned to the top"
+            set status message to "Note pinned to the top."
+        end
+        tidy notes
+        find current
+        save all notes to the device as "notes"
+        refresh list
+    otherwise:
+        set status message to "Save the note before pinning it."
+    end
+end
+
+when "delete button" is clicked:
+    if editing index is greater than 0 and editing index is at most (length of all notes):
+        set remaining notes to an empty list
+        count from 1 to length of all notes as spot:
+            if spot is not editing index:
+                add item spot of all notes to remaining notes
+            end
+        end
+        set all notes to remaining notes
+        save all notes to the device as "notes"
+        start fresh
+        refresh list
+        if length of all notes is greater than 0:
+            open note 1
+        end
+        set status message to "Note deleted."
+    otherwise:
+        set status message to "There is no saved note to delete."
+    end
+end

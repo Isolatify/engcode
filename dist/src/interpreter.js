@@ -27,6 +27,7 @@ export class Interpreter {
     input;
     random;
     maxSteps;
+    onStep;
     fileRoot;
     allowNetwork;
     storagePath;
@@ -36,6 +37,7 @@ export class Interpreter {
         this.input = options.input ?? new EmptyInput();
         this.random = options.random ?? Math.random;
         this.maxSteps = options.maxSteps ?? 0;
+        this.onStep = options.onStep;
         this.fileRoot = path.resolve(options.fileRoot ?? process.cwd());
         this.allowNetwork = options.allowNetwork ?? false;
         this.storagePath = path.resolve(options.storagePath ?? path.join(this.fileRoot, ".engcode", "storage.json"));
@@ -74,6 +76,13 @@ export class Interpreter {
         if (this.maxSteps > 0 && this.steps > this.maxSteps) {
             this.fail("This program has been running for a very long time. I stopped it so you are not stuck.", statement.token, "Check the loop condition, or press Ctrl+C to stop.");
         }
+        this.onStep?.({
+            statement,
+            step: this.steps,
+            line: statement.token.line,
+            source: statement.token.file.lines[statement.token.line - 1]?.trim() ?? "",
+            env,
+        });
         switch (statement.kind) {
             case "say": {
                 const value = this.evaluate(statement.value, env);

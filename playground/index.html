@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EngCode Playground</title>
+    <meta name="description" content="Write and run EngCode in your browser." />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#editor">Skip to the editor</a>
+    <header class="bar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">E</span>
+        <span>EngCode <strong>Playground</strong></span>
+      </div>
+      <p class="tagline">Build with Simple English</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel editor-panel" aria-labelledby="editor-title">
+        <div class="panel-head">
+          <h1 id="editor-title">Your program</h1>
+          <div class="tools">
+            <label class="visually-hidden" for="examples">Load an example</label>
+            <select id="examples">
+              <option value="hello">Hello</option>
+              <option value="loops">Loops</option>
+              <option value="lists">Lists and tables</option>
+              <option value="functions">Functions</option>
+              <option value="app">A small app</option>
+            </select>
+            <button id="run" class="primary" type="button">Run <kbd>Ctrl</kbd>+<kbd>Enter</kbd></button>
+          </div>
+        </div>
+        <label class="visually-hidden" for="editor">EngCode source</label>
+        <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+        <div class="answers">
+          <label for="inputs">Answers for <code>ask</code> (comma separated)</label>
+          <input id="inputs" type="text" placeholder="Ada, blue" />
+        </div>
+      </section>
+
+      <section class="panel output-panel" aria-labelledby="output-title">
+        <div class="panel-head">
+          <h2 id="output-title">Output</h2>
+          <span id="status" class="status" role="status" aria-live="polite">Ready</span>
+        </div>
+        <pre id="output" class="output" tabindex="0">Press Run to see what your program does.</pre>
+        <div id="diagnostics" class="diagnostics" aria-live="polite"></div>
+        <div id="app-frame" class="app-frame" hidden>
+          <iframe id="preview" title="App preview" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>Runs locally on your machine. Scripts stop after 200,000 steps.</p>
+      <p><a href="https://github.com/" rel="noreferrer">EngCode docs</a></p>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

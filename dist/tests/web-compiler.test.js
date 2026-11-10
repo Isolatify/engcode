@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { analyze } from "../src/program.js";
 import { compileWeb } from "../src/web/compiler.js";
-const EXAMPLES = ["todo", "portfolio", "weather", "notes", "pong"];
+const EXAMPLES = ["todo", "portfolio", "weather", "notes", "notes-desktop", "pong"];
 function buildExample(name, options = {}) {
     const root = path.resolve("examples", name);
     const file = path.join(root, "main.eng");
@@ -64,6 +64,16 @@ test("renders the weather form and network allow list", () => {
     assert.match(build.html, /data-eng-id="result"/);
     assert.match(build.js, /api\.open-meteo\.com/);
 });
+test("renders the Windows 11 notes app with Fluent fonts and interactive lists", () => {
+    const { build } = buildExample("notes-desktop");
+    assert.match(build.css, /Segoe UI Variable Text/);
+    assert.match(build.css, /Segoe UI Variable Display/);
+    assert.match(build.css, /\.eng-list-interactive li\[aria-current="true"\]/);
+    assert.match(build.css, /@keyframes eng-slide-right/);
+    assert.match(build.html, /data-eng-id="app shell"/);
+    assert.match(build.html, /data-eng-id="save button"/);
+    assert.match(build.html, /data-eng-id="notes"/);
+});
 test("renders the pong canvas with an accessible fallback", () => {
     const { build } = buildExample("pong");
     assert.match(build.html, /<canvas width="800" height="500" aria-label="board"/);
@@ -78,6 +88,46 @@ test("turns styles into scoped CSS with states and media queries", () => {
     assert.match(build.css, /@media \(max-width: 639px\)/);
     assert.match(build.css, /border-radius: 8px/);
     assert.match(build.css, /background-color: #0000ff/);
+});
+test("keeps media styles scoped and applies states to every selector", () => {
+    const source = [
+        'app "CSS":',
+        '    page "Home":',
+        '        row called "panel":',
+        '            text "Hi"',
+        "        end",
+        '        input called "field"',
+        "    end",
+        "end",
+        "",
+        'style "panel":',
+        "    background is white",
+        "end",
+        "",
+        'style "panel" on small screens:',
+        "    background is black",
+        "    width is 50 percent",
+        "end",
+        "",
+        "style inputs:",
+        "    padding is 10",
+        "    when focused:",
+        "        border color is blue",
+        "    end",
+        "end",
+        "",
+        "style everything:",
+        "    min height is 100vh",
+        "end",
+        "",
+    ].join("\n");
+    const analysis = analyze("css.eng", source, { root: process.cwd(), allowApps: true });
+    assert.deepEqual(analysis.diagnostics.filter((diagnostic) => diagnostic.severity !== "warning"), []);
+    const build = compileWeb(analysis.program, { root: process.cwd() });
+    assert.match(build.css, /\[data-eng-id="panel"\] \{\n  background-color: #ffffff;\n\}/);
+    assert.match(build.css, /@media \(max-width: 639px\) \{\n  \[data-eng-id="panel"\] \{\n    background-color: #000000;\n    width: 50%;\n  \}\n\}/);
+    assert.match(build.css, /input:focus-visible, textarea:focus-visible, select:focus-visible \{/);
+    assert.match(build.css, /min-height: 100vh;/);
 });
 test("supports minified output", () => {
     const { build } = buildExample("notes", { minify: true });

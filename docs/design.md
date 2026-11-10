@@ -2,7 +2,7 @@
 
 **Slogan:** Build with Simple English  
 **File extension:** `.eng`  
-**Status:** Milestones 1–3 are implemented, and the Milestone 4 desktop shell is in place. The terminal language, web compiler, browser runtime, themes and media, live-reload server, five web app examples, and generated Electron desktop projects are complete and tested.  
+**Status:** Milestones 1–5 are implemented. The terminal language, web compiler, browser runtime, themes and media, live-reload server, six web app examples (including a Windows 11-styled desktop notebook), generated Electron desktop projects, formatter, linter, step debugger, 20-lesson tutorial, local playground, VS Code extension, and install/release scripts are complete and tested. Remaining M4 packaging limits are code signing, notarization, and a Node-free standalone binary.  
 **Formal grammar:** [docs/grammar.md](grammar.md)
 
 ---
@@ -31,7 +31,7 @@ This document fixes the language surface, the keyword set, the execution model, 
 | Desktop | **Electron**, with a Tauri-ready packaging adapter | This machine has no Rust toolchain; Electron gives a Node-only pipeline and reliable `.exe`/`.dmg` packaging. The generated app is plain web assets, so a Tauri adapter can be added without touching the language. |
 | Web output | Single-page app with hash routes (`#/home`) | One `index.html` + shared assets; state survives page changes; `go to page` is instant. |
 | Standard library | English-named built-ins, always available | `use math` is accepted for readability, but beginners should not have to import arithmetic. |
-| Dependencies | Node built-ins only for the compiler and CLI; `electron`/`electron-builder` only for desktop packaging; `happy-dom` for DOM tests | Offline install, small attack surface, no framework churn. |
+| Dependencies | Node built-ins only for the compiler and CLI; `electron` only for desktop packaging and electron-packager for release folders; `happy-dom` for DOM tests | Offline install, small attack surface, no framework churn. |
 | Tests | `node:test` + built-in coverage | Zero test-framework dependencies and first-class TypeScript/ESM support. |
 
 ---
@@ -430,7 +430,7 @@ end
 ```
 
 - `use "path.eng"` imports a module. Its top-level definitions become available; its top-level statements run once, on first import. Names may not collide. Import cycles produce a friendly error with the chain of files.
-- Paths are relative to the importing file. Imports must stay inside the project root; symlinks are resolved before the check.
+- Paths are relative to the importing file. Imports must stay inside the project root; the path check normalises the path and rejects escapes. It does not resolve symlinks, so a project should not link outside its own folder.
 - `use math`, `use time`, `use random`, `use json`, `use files`, `use web`, and `use storage` are accepted and document intent. The standard library is always available; the `use` line is never required.
 - `use theme "dark"` is a UI declaration, not an import. It sets the initial color theme.
 
@@ -438,19 +438,20 @@ end
 
 | Capability | Default | Control |
 |---|---|---|
-| Read/write project files | Allowed inside the project root only | Banner on run; absolute paths and `..` escapes rejected |
-| Network (`get data`, `send data`) | Denied | Host must be listed in `engcode.json` under `allow.network`, or pass `--allow-network` for a one-off run; HTTPS only |
-| Device storage (`save ... to the device`) | Allowed, namespaced per project | Banner on run; stored in `.engcode/storage.json` for scripts, `localStorage` for web |
-| Desktop bridge | Same rules as scripts | Electron preload exposes only storage and allowed project files |
+| Read/write project files | Allowed inside the project root only | Absolute paths and `..` escapes rejected |
+| Network (`get data`, `send data`) | Denied in terminal scripts | Host must be listed in `engcode.json` under `allow.network`, or pass `--allow-network` for a one-off run; HTTPS only |
+| Device storage (`save ... to the device`) | Allowed, namespaced per project | Stored in `.engcode/storage.json` for scripts, `localStorage` for web |
+| Desktop window | Same rules as scripts | Sandboxed Electron window served from loopback; no Node.js in the page |
 
-`engcode check` prints the complete capability list before any code runs:
+`engcode lint` reports capability use as advice before any code runs:
 
 ```text
-This program can:
-  • read and write files inside D:\Coding\weather-app
-  • contact api.open-meteo.com over HTTPS
-  • store data on this device as "weather-app"
+This program can use project files.
+This program can contact the network.
+This program can use device storage.
 ```
+
+`engcode check --lint` includes the same notes alongside its diagnostics.
 
 `engcode.json` is created by `engcode new` and is intentionally short:
 
@@ -556,7 +557,7 @@ heading greeting
 | Actions | `button "Add" called "add button" [submits]` |
 | Inputs | `input called "id" [with label "..."] [with hint "..."] [with starting "..."] [required]`, `text area called "id" [with hint "..."]`, `checkbox "Done" called "id" [with starting yes]`, `switch "Dark mode" called "id"`, `dropdown called "id" with choices "A", "B"`, `radio choice "A" called "id"`, `slider called "id" with minimum 0 and maximum 100 and starting 50` |
 | Media | `image "logo.png" [with description "..."] [and width 200 and height 200]`, `video "intro.mp4" [with description "..." and poster "cover.jpg" and loops]`, `audio "music.mp3" [and loops]` |
-| Data | `list called "id" [showing items]`, `table called "id" (showing rows | with columns "A", "B")` |
+| Data | `list called "id" [showing items]` (items become focusable buttons when the list has a click handler), `table called "id" (showing rows | with columns "A", "B")` |
 | Navigation | `menu:`, `navigation bar:`, `footer:`, `link "Learn more" to "https://..."` |
 | Grouping | `form called "id":`, `popup called "id":`, `tabs:` with `tab "One":` ... `end` |
 | Decoration | `icon "star"`, `divider` |
@@ -667,7 +668,7 @@ play sound "ding.mp3"
 say "Saved!"               note: toast in an app
 ```
 
-`change ... of` supports only a fixed, safe list: `text`, `value`, `background`, `text color`, `font size`, `width`, `height`, `rounded corners`, `padding`, `margin`, `border`, `opacity`, `alignment`.
+`change ... of` supports only a fixed, safe list: `text`, `value`, `background`, `text color`, `font size`, `width`, `height`, `rounded corners`, `padding`, `margin`, `border`, `opacity`, `alignment`. On a list, `change value of "id" to item` selects and highlights that item; the selection is kept even when the list has not rendered its rows yet, and the next render applies it.
 
 **Device storage, web data, and games**
 
@@ -711,10 +712,10 @@ Generated runtime size target: under 25 KB minified and under 8 KB compressed. T
 - Inputs always have a label: `with label`, the `called` id, or a generated label from the hint. Missing labels are a build warning; `--strict` turns them into errors.
 - Images use `with description` as `alt`. A missing description produces `alt=""` plus a warning, which is correct for decorative images and visible in review.
 - Buttons and links are native elements, so keyboard and screen reader behavior comes for free. Custom popups trap focus, restore focus on close, and close on Escape.
-- Headings warn when a level is skipped (h1 → h3) or when a page has no h1.
+- Headings warn when a level is skipped (h1 → h3) or when a page has no heading.
 - `row` and `column` are layout `<div>`s, never tables. Data tables use `<table>`, `<th scope>`, and `<caption>`.
 - A "skip to content" link is generated for every page.
-- The contrast checker runs at build time and in `engcode check`.
+- The contrast checker runs at build time.
 - Animations respect `prefers-reduced-motion`; transitions are short by default.
 - Canvas games must include a short instruction line in the page (the example does), and the canvas has an `aria-label` and a text fallback.
 
@@ -725,8 +726,8 @@ Generated runtime size target: under 25 KB minified and under 8 KB compressed. T
 - Network access is limited to declared HTTPS hosts. Redirects to other hosts are rejected. Responses are size-limited.
 - Storage keys are namespaced by app name; apps cannot read another app's keys.
 - Generated pages use a Content Security Policy that forbids inline scripts and `eval`.
-- Electron uses `contextIsolation: true`, `nodeIntegration: false`, a narrow preload bridge, and blocks navigation to untrusted origins. External links open in the system browser.
-- File access is locked to the project root after path normalization and symlink resolution.
+- Electron uses `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, and `webSecurity: true`. It blocks navigation to untrusted origins, and external links open in the system browser. There is no preload bridge.
+- File access is locked to the project root after path normalization. The check rejects `..` and absolute paths; it does not resolve symlinks, so projects should not link outside their own folder.
 
 ---
 
@@ -767,25 +768,24 @@ src/
   diagnostics.ts        friendly error rendering and suggestions
   values.ts             runtime values, deep equality, pretty printing
   interpreter.ts        closure compiler and statement executor
-  builtins/             math, text, lists, tables, time, json, files, web, storage
-  web/                  app model, HTML/CSS/JS generation, dev server
-  desktop/              Electron main/preload, packaging
-  formatter.ts
-  explain.ts            English step-by-step debugger
+  program.ts            file loading, imports, shared analysis
+  formatter.ts          deterministic source formatter
+  lint.ts               advisory linter
+  explain.ts            English statement descriptions for --explain
+  templates.ts          `engcode new` project scaffolds
+  learn.ts              20 tutorial lessons and progress
+  playground.ts         local playground server and preview
+  web/compiler.ts       app model, HTML/CSS/JS generation, dev server
+  desktop/shell.ts      Electron window and generated desktop projects
   cli.ts                command dispatch
-  learn/                20 tutorial lessons
 runtime/
   web-runtime.ts        browser runtime: state, events, routing, fetch, storage, canvas
-  shared.ts             helpers shared by interpreter and browser
-cli/
-  bin.ts                #!/usr/bin/env node entry
-  templates/            new-project scaffolds
-examples/               10 runnable projects
-docs/                   design, grammar, guides, FAQ, cheat sheet
+examples/               10 runnable projects plus the desktop notebook
+docs/                   design, grammar, guides, reference, tutorial, FAQ
 tests/                  unit, compiler, example, e2e, performance
-editor/
-  vscode/               extension: grammar, snippets, completion, diagnostics
-playground/             static browser playground
+editor/vscode/          extension: grammar, snippets, diagnostics, commands
+playground/             local playground page and assets
+scripts/                install and release helpers
 ```
 
 ### 5.3 Script interpreter
@@ -811,7 +811,7 @@ If the closure backend misses the gate, the resolved AST can be lowered to a sma
 
 ### 5.4 Web runtime and desktop
 
-- The browser runtime is framework-free. It exposes `state`, `render`, `bind`, `fetchJSON`, `storage`, `router`, `canvas`, and `toast`.
+- The browser runtime is framework-free. `startApp` builds the screen from a serialized app definition and internally handles state, rendering, events, routing, storage, HTTPS fetch, canvas, and toasts.
 - Handlers are compiled to async functions when they contain `get data`, `send data`, or `wait`; otherwise they stay synchronous.
 - Desktop packaging uses Electron. `engcode app` opens a secure BrowserWindow pointed at a private loopback server. `engcode build windows` and `engcode build mac` write a runnable Electron project with `main.cjs`, the web build, a launcher, and Electron Packager scripts. Code signing and installers are publishing steps layered on top of the packaged release; macOS releases must be built on macOS.
 - A future `--tauri` packaging adapter can reuse the same generated web assets. No language change is needed.
@@ -821,17 +821,20 @@ If the closure backend misses the gate, the resolved AST can be lowered to a sma
 ## 6. Command line
 
 ```text
+engcode new my-project        scaffold a script, website, app, or desktop project
 engcode run file.eng          run a script in the terminal
-engcode new my-project        scaffold a script, website, or app
-engcode serve                 run an app/website in the browser with live reload
-engcode app                   run the app in a native desktop window
-engcode build web             produce a static website (HTML + CSS + JS)
-engcode build windows         produce a Windows desktop project / release folder
-engcode build mac             produce a macOS desktop project / release folder
+engcode serve folder          run an app/website in the browser with live reload
+engcode app folder            run the app in a native desktop window
+engcode build web folder      produce a static website (HTML + CSS + JS)
+engcode build windows folder  produce a Windows desktop project
+engcode build mac folder      produce a macOS desktop project
+engcode build linux folder    produce a Linux desktop project
 engcode check file.eng        find mistakes without running
 engcode format file.eng       auto-format code
+engcode lint file.eng         report style and capability advice
 engcode repl                  interactive prompt
-engcode learn                 interactive tutorial
+engcode learn                 the 20-lesson tutorial
+engcode playground            open the local playground
 ```
 
 Common options:
@@ -841,26 +844,31 @@ Common options:
 --step               like --explain, paused between statements
 --strict             treat accessibility/lint warnings as errors
 --json               machine-readable diagnostics (used by the editor)
+--lint               include linter advice in `check`
 --allow-network      allow HTTPS requests for this run only
---allow-files        allow project file access for this run only
---port 3000          dev server port
+--port 3000          dev server or playground port
 --open               open the browser after serve
 --out dist           build output folder
 --minify             minify web output
 --check              formatter: exit 1 if the file would change
---write              formatter: write changes (the default)
+--stdout             formatter: print the result instead of writing it
+--type script|website|app|desktop   project kind for `new`
+--run / --file / --done / --reset   tutorial controls
 ```
 
-- `engcode run` accepts a `.eng` file or a project folder (uses `engcode.json`'s `entry`). Running a file that only declares an app prints: `This is an app. Try "engcode serve" or "engcode app".`
+- `engcode run` accepts a `.eng` file or a project folder (uses `engcode.json`'s `entry`). Running a file that only declares an app prints: `This is an app. Try "engcode serve" or "engcode app".` File access is always limited to the project folder; there is no separate file-permission flag.
 - `engcode new` prompts for a type when `--type` is omitted. It creates `main.eng`, `engcode.json`, `.gitignore`, and a short README. It never overwrites an existing folder.
 - `engcode serve` watches every `.eng` file in the project and rebuilds in memory. Browser reload is driven by SSE; if the port is busy it tries the next one and prints the URL.
-- `engcode app` builds, starts the local server, and opens Electron. Closing the window stops the server.
-- `engcode build windows` and `build mac` generate a self-contained Electron project and report its absolute path. `npm run package` inside that project produces a release folder with Electron Packager. macOS builds must run on macOS.
+- `engcode app` builds, starts the local server, and opens Electron. Closing the window stops the server. Electron must be installed first.
+- `engcode build windows`, `build mac`, and `build linux` generate a self-contained Electron project and report its absolute path. `npm run package` inside that project produces a release folder with Electron Packager. macOS builds must run on macOS.
 - `engcode repl` keeps state between lines, supports multi-line blocks (the prompt changes to `...` until `end`), and offers `:help`, `:clear`, `:load file.eng`, `:quit`.
+- `engcode format` is deterministic and idempotent; `--check` is for CI and `--stdout` is for editors.
+- `engcode lint` warns only, and `--strict` makes warnings exit with code 1.
 - `engcode learn` stores progress in `.engcode/learn.json`; `engcode learn 4` starts at lesson 4.
-- Exit codes: `0` success, `1` user error (syntax/semantic/runtime), `2` internal error. Internal errors print a short apology and ask for the file, never a raw stack trace unless `--debug`.
+- `engcode playground` serves a local editor with a 200,000-statement limit and a sandboxed app preview.
+- Exit codes: `0` success, `1` user error (syntax/semantic/runtime), `2` internal error.
 
-**Installation.** `npm install -g engcode` is the one-line install for both Windows and macOS. Release installers add a standalone binary and do not require Node: `install.ps1` via PowerShell on Windows, `install.sh` via curl on macOS, plus a GUI installer (`.exe`/`.pkg`) built from the same release artifacts. The installed package contains the compiler, runtime, templates, tutorial, docs, and examples, so everything works offline.
+**Installation.** `npm install -g engcode` is the one-line install when the package is published. From a checkout or release folder, `scripts/install.ps1 -From .` and `scripts/install.sh --from .` check for Node.js 20 or newer, install globally, and verify the command. `scripts/package-release.mjs` builds an npm tarball, a portable folder with launchers, local installers, and SHA-256 checksums. The current release still requires Node.js: a Node-free standalone binary and signed `.exe`/`.pkg` installers are future packaging work, not shipped features.
 
 ---
 
@@ -868,35 +876,35 @@ Common options:
 
 **VS Code extension** (`editor/vscode`)
 - TextMate grammar for `.eng`: keywords, names, strings, numbers, comments, block headers, style properties, event phrases.
-- Snippets: `say`, `ask`, `if`, `repeat`, `for each`, `define`, `try`, `app`, `page`, `style`, `when`, `keep track`.
-- Completion: keywords in context, block kinds inside a page, style properties inside a style block, built-in phrases, and names already declared in the document.
-- Diagnostics via `engcode check --json`, rendered as squiggles with the same friendly message and suggested fix.
-- Hover documentation for keywords and built-ins.
-- Format on save via `engcode format`, and commands to run/serve the current file.
+- Snippets for `say`, `ask`, `if`, `repeat`, `for each`, `define`, `try`, `app`, `page`, `style`, `when`, `keep track`.
+- Completion for keywords and built-in phrases; hover documentation for keywords, built-ins, and app blocks.
+- Diagnostics via `engcode check --json --lint`, refreshed on open, save, and shortly after typing stopped. The message includes the friendly hint and suggestion.
+- Document formatting via `engcode format --stdout`, plus commands to run, serve, explain, and check the current file.
 - No language server is required for v1; the extension shells out to the CLI. The `--json` protocol is stable so an LSP can be added later.
 
 **Web playground** (`playground/`)
-- CodeMirror editor with EngCode highlighting, a Run button, and an output pane.
-- Scripts run in a Web Worker with `say`, `ask`, and `wait` adapters, so an infinite loop cannot freeze the page.
-- Apps compile in the browser and render in a sandboxed iframe via `srcdoc`, with the same runtime as the CLI build.
-- Shareable examples load from `/examples`; no server-side execution.
+- A local server started by `engcode playground`, with a plain accessible textarea editor, example loader, Run button, output pane, and diagnostics pane.
+- Scripts execute on the local server through `/api/run` with a 200,000-statement limit; requests over 256 KB are rejected. There is no browser worker and no server-side sandbox.
+- Apps compile through the same web compiler as a build and preview in a sandboxed iframe served from `/preview/<id>/`, so the preview uses the real runtime and security policy.
+- The page is a local development tool: do not expose it to the internet or run untrusted code in it.
 
 **Formatter and linter**
-- The formatter is deterministic and idempotent: four-space indentation, one statement per line, canonical keyword casing, canonical spacing around `plus`, `is`, and `,`, blank line between top-level declarations, no trailing spaces.
-- The linter reports unused names, shadowed names, unreachable statements, empty blocks, missing labels/alt text, low contrast, skipped heading levels, suspicious `add`/`remove` targets, and capability usage.
+- The formatter is deterministic and idempotent: four-space indentation, one statement per line, lower-cased statement-leading keywords, tidy punctuation, collapsed blank lines, no trailing spaces, and a final newline. It preserves strings, comments, and the names the programmer chose.
+- `engcode format` writes files; `--check` exits 1 when a file would change; `--stdout` prints the result.
+- The linter warns only, and `--strict` turns warnings into exit code 1. Rules: ambiguous names that end in operator words, names that shadow built-ins, declarations that are never used, tabs, long lines, `TODO`/`FIXME` notes, empty blocks, and capability use for files, network, or device storage.
 
 **Debugger**
-- `engcode run file.eng --explain` prints, for each statement: the line, an English explanation, and the names it changed. Example: `Line 5: add 5 to age → age is now 30.`
-- `--step` pauses after each statement. Press Enter to continue, `v` to show all variables, `q` to quit.
-- Runtime errors show the English call trail and the values of local names.
+- `engcode run file.eng --explain` prints, for each statement, the step number, line, source text, and an English description to stderr. Program output stays on stdout.
+- `--step` pauses on a terminal: Enter continues, `v` lists names and values, `q` quits. When input is piped it continues automatically.
+- Explanations stop after 200 steps, so a loop cannot flood the terminal.
 
 **Tutorial**
-- 20 lessons: hello, variables, text, numbers, asking, conditions, comparisons, loops, lists, tables, functions, returns, defaults, errors, files, modules, first page, styling, events, state and storage.
-- Each lesson explains one idea, shows a tiny example, asks the learner to write or fix a program, runs it, and gives a hint after two failures. Progress is saved.
+- 20 lessons: hello, names, text, numbers, asking, conditions, comparisons, loops, lists, tables, functions, recursion, defaults, errors, files, modules, first page, styling, events, state and storage.
+- Each lesson explains one idea, shows a small example, suggests a task, and gives a hint after two failed attempts. `--run` runs the example, `--file` runs the learner's attempt, and `--done` marks progress. Progress is saved in `.engcode/learn.json`.
 
 **Documentation** (`docs/`)
-- Getting Started, Language Reference, App Building Guide, Styling Guide, Standard Library, CLI, Security & Permissions, FAQ, and a one-page cheat sheet named `cheatsheet.md`.
-- Every error message links to a section in the language reference (the CLI prints a relative docs path).
+- Getting Started, Language Reference, App Building Guide, Styling Guide, Standard Library, CLI, Tutorial, Security & Permissions, Install, FAQ, and a one-page cheat sheet named `cheatsheet.md`.
+- Every guide links to the others, and the README links the full set.
 
 ---
 
@@ -913,14 +921,14 @@ Common options:
 | Interpreter | values, coercion, deep equality, closures, recursion, objects, `try`, modules, stdlib |
 | Compiler | HTML/CSS/JS golden snapshots, escaping, ids, routes, accessibility attributes, contrast warnings |
 | Examples | every example runs; every app builds; scripted stdin/output for terminal examples |
-| CLI | `new`, `check`, `format`, `build web`, `run`, `repl` (spawned as a child process) |
+| CLI | `new`, `check`, `format`, `lint`, `build web`, `run`, `learn`, `repl` (spawned as a child process) |
 | Web runtime | events, state refresh, storage, fetch (mocked), canvas via `happy-dom` |
 | Performance | 1M-iteration loop under 2 seconds |
-| Security | path traversal, symlink escape, disallowed host, `javascript:` link, CSP presence |
+| Security | path traversal, disallowed host, `javascript:` link, CSP presence |
 
-**Coverage target:** 90%+ lines and branches on `src/` core (lexer, parser, checker, interpreter, values, builtins, diagnostics). Coverage is measured with Node's built-in coverage and fails CI below the threshold.
+**Coverage target:** the enforced gates are 90% lines, 80% branches, and 90% functions across `src/` and `runtime/`, excluding `src/cli.ts` and `src/playground.ts`. Coverage is measured with Node's built-in coverage and fails CI below the thresholds. The current run reports **302 tests, 95.2% lines, 87.8% branches, and 94.1% functions**. Individual runtime and web-compiler branch percentages fall below 80, but the global gate passes.
 
-**Example tests** are not just "it parses": terminal examples are run with scripted input and assert exact output; apps are built and assert key accessible structure, generated handlers, and expected CSS. A browser smoke test (Playwright, optional in CI) loads the portfolio and todo app, clicks the primary button, and checks the visible result.
+**Example tests** are not just "it parses": terminal examples are run with scripted input and assert exact output; apps are built and driven through `happy-dom` smoke tests that click controls, read rendered text, and check storage. The notes-desktop example covers search, pinning, selection, and both themes.
 
 ---
 
@@ -1316,13 +1324,13 @@ Lexer, name pre-scan, parser, checker, closure interpreter: variables, `say`, `a
 Lists, tables, functions (defaults, closures, anonymous), objects, `try`, modules, the full standard library, REPL. The 1M-loop benchmark passes. All five terminal examples run (hello, guessing, calculator, quiz, rock-paper-scissors). Coverage ≥ 90% on the core.
 
 **M3 — Web and apps** — **done**
-App model, all blocks, styles, events, reactive state, routing, storage, fetch, canvas, accessibility checks, static build, `engcode serve` with live reload. Todo, portfolio, weather, notes, and Pong build and pass DOM smoke tests.
+App model, all blocks, styles, events, reactive state, routing, storage, fetch, canvas, accessibility checks, static build, `engcode serve` with live reload. Todo, portfolio, weather, notes, notes-desktop, and Pong build and pass DOM smoke tests. The notes-desktop example adds interactive list selection, Fluent fonts, light/dark themes, layered surfaces, and Windows 11-style motion.
 
-**M4 — Desktop and installers** — **desktop shell done; signed installers pending**
-Electron shell, `engcode app`, `build web`, `build windows`, `build mac`, asset copying, and desktop project generation are implemented. Generated projects use a private loopback server, context isolation, no Node.js integration, and a sandbox. Each project includes Electron Packager scripts. Code signing, notarization, and distributable installers are publishing steps that need platform credentials, so they remain pending rather than claimed as complete.
+**M4 — Desktop and packaging** — **desktop shell done; signed installers and standalone binary pending**
+Electron shell, `engcode app`, `build web`, `build windows`, `build mac`, `build linux`, asset copying, and desktop project generation are implemented. Generated projects use a private loopback server, context isolation, no Node.js integration, and a sandbox. Each project includes Electron Packager scripts, and `scripts/package-release.mjs` produces an npm tarball, a portable release folder with launchers, and SHA-256 checksums. Code signing, notarization, signed `.exe`/`.pkg` installers, and a Node-free standalone binary need platform credentials and an additional packaging toolchain, so they remain pending rather than claimed as complete.
 
-**M5 — Developer experience**
-VS Code extension, playground, formatter, linter, `--explain`/`--step`, 20-lesson tutorial, complete docs and cheat sheet, installation scripts. All examples have tests; coverage and performance gates are enforced.
+**M5 — Developer experience** — **done**
+VS Code extension, local playground, formatter, linter, `--explain`/`--step`, 20-lesson tutorial, install scripts, complete docs and cheat sheet all ship. 302 tests pass; the enforced coverage gates (90% lines, 80% branches, 90% functions) and the 1M-loop performance gate pass.
 
 **M6 — Hardening**
 Fuzz the parser with malformed English input, audit capability escapes, test Windows and macOS path handling, measure generated web output, and fix the top usability issues found by running the tutorial from a clean start.
@@ -1354,19 +1362,13 @@ Fuzz the parser with malformed English input, audit capability escapes, test Win
 - **macOS packaging** cannot be produced from Windows. Mitigation: a documented macOS CI job and a script that is tested on macOS before claiming support.
 - **Network examples** depend on a public API and CORS. Mitigation: Open-Meteo supports browser CORS and needs no key; tests mock the response.
 - **Scope.** The app layer is large. Mitigation: blocks are table-driven; the compiler has one element mapping per block kind, not bespoke code per example.
-- **Install URLs** use a release host that does not exist yet. Mitigation: `npm pack` and the local installer scripts work first; public URLs are wired at release time.
+- **Release packaging.** Install URLs use a release host that does not exist yet, and signed installers plus a Node-free binary need platform credentials and tooling. Mitigation: `npm pack`, the release packager, and both local installers work now; public URLs, signing, and a standalone binary are wired at release time.
 
 ---
 
 ## 12. Approval
 
-This is the complete design for step 1. If it is approved, I will start M1 and report the test results before moving on.
-
-Three decisions benefit from an explicit yes:
-
-1. The overall syntax, including contextual multi-word names and the `and`-separates-arguments rule.
-2. Electron for desktop packaging, with the web assets kept Tauri-ready, instead of requiring a Rust toolchain now.
-3. The milestone order and the "finish every example" acceptance bar.
+This document records the implemented design through Milestone 5. The language surface, app model, CLI, layout, tests, and milestones now describe the shipped code rather than a plan.
 
 
 

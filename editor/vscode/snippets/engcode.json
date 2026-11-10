@@ -1,0 +1,72 @@
+{
+  "Say something": {
+    "prefix": "say",
+    "body": ["say ${1:\"Hello, world!\"}"],
+    "description": "Print one line of text."
+  },
+  "Ask for input": {
+    "prefix": "ask",
+    "body": ["ask ${1:\"What is your name?\"} and save it as ${2:name}"],
+    "description": "Ask a question and remember the answer."
+  },
+  "If block": {
+    "prefix": "if",
+    "body": ["if ${1:condition}:", "    $0", "end"],
+    "description": "Run a block when a condition is true."
+  },
+  "Otherwise": {
+    "prefix": "otherwise",
+    "body": ["otherwise:", "    $0"],
+    "description": "The other branch of an if block."
+  },
+  "Repeat times": {
+    "prefix": "repeat",
+    "body": ["repeat ${1:3} times:", "    $0", "end"],
+    "description": "Run a block a fixed number of times."
+  },
+  "For each": {
+    "prefix": "foreach",
+    "body": ["for each ${1:item} in ${2:items}:", "    $0", "end"],
+    "description": "Visit every item in a list."
+  },
+  "Count from to": {
+    "prefix": "count",
+    "body": ["count from ${1:1} to ${2:10} as ${3:number}:", "    $0", "end"],
+    "description": "Count through a range of numbers."
+  },
+  "Define function": {
+    "prefix": "define",
+    "body": ["define ${1:name} with ${2:value}:", "    give back ${3:value}", "end"],
+    "description": "Define a reusable function."
+  },
+  "Try and fail": {
+    "prefix": "try",
+    "body": ["try:", "    $1", "if it fails:", "    say \"Caught: \" plus the error", "end"],
+    "description": "Catch a runtime error."
+  },
+  "App": {
+    "prefix": "app",
+    "body": ["app ${1:\"My App\"}:", "    page \"Home\":", "        $0", "    end", "end"],
+    "description": "Start an app with a home page."
+  },
+  "Page": {
+    "prefix": "page",
+    "body": ["page ${1:\"Home\"}:", "    $0", "end"],
+    "description": "Add a page to an app."
+  },
+  "Style": {
+    "prefix": "style",
+    "body": ["style ${1:everything}:", "    ${2:background} is ${3:#f8fafc}", "end"],
+    "description": "Style part of an app."
+  },
+  "When clicked": {
+    "prefix": "when",
+    "body": ["when ${1:\"button\"} is clicked:", "    $0", "end"],
+    "description": "Run steps when an element is clicked."
+  },
+  "Keep track": {
+    "prefix": "keep",
+    "body": ["keep track of ${1:name} as ${2:0}"],
+    "description": "Keep a value that refreshes the screen."
+  }
+}

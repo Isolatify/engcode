@@ -278,6 +278,8 @@ const FONT_STACKS: Record<string, string> = {
   code: '"Cascadia Code", "Fira Code", Consolas, "Courier New", monospace',
   rounded: '"Trebuchet MS", "Segoe UI", system-ui, sans-serif',
   friendly: '"Trebuchet MS", "Segoe UI", system-ui, sans-serif',
+  windows: '"Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif',
+  "windows display": '"Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif',
   display: 'Impact, "Arial Black", "Segoe UI Black", sans-serif',
   handwriting: '"Comic Sans MS", "Segoe Print", "Bradley Hand", cursive',
 };
@@ -1102,6 +1104,14 @@ function styleSelector(style: StyleStmt): string {
   return KIND_SELECTORS[style.target.toLowerCase()] ?? `.eng-${slug(style.target)}`;
 }
 
+/** Applies a pseudo-class or prefix to every selector in a comma list. */
+function eachSelector(selector: string, transform: (one: string) => string): string {
+  return selector
+    .split(",")
+    .map((one) => transform(one.trim()))
+    .join(", ");
+}
+
 function stateSuffix(state: string): string {
   const lower = state.toLowerCase();
   if (lower.includes("over") || lower.includes("hover")) return ":hover";
@@ -1180,13 +1190,17 @@ function renderCss(
 
   for (const style of styles) {
     const selector = styleSelector(style);
-    const rules: string[] = [];
+    const media = mediaQuery(style.media);
+    // A media-scoped style only applies inside its query; it must never leak
+    // into the base stylesheet.
+    const wrapMedia = (css: string): string =>
+      media ? `@media ${media} {\n${css.replace(/^/gm, "  ")}\n}` : css;
+
     const declarations = style.declarations
       .map((declaration) => declarationToCss(declaration, roles))
       .filter((pair): pair is [string, string] => pair !== undefined);
-
-    for (const [property, value] of declarations) rules.push(`  ${property}: ${value};`);
-    if (rules.length > 0) chunks.push(`${selector} {\n${rules.join("\n")}\n}`);
+    const rules = declarations.map(([property, value]) => `  ${property}: ${value};`);
+    if (rules.length > 0) chunks.push(wrapMedia(`${selector} {\n${rules.join("\n")}\n}`));
 
     for (const state of style.states) {
       const suffix = stateSuffix(state.state);
@@ -1196,23 +1210,23 @@ function renderCss(
         .filter((pair): pair is [string, string] => pair !== undefined)
         .map(([property, value]) => `  ${property}: ${value};`);
       if (stateRules.length > 0) {
-        chunks.push(`${selector}${suffix} {\n${stateRules.join("\n")}\n}`);
+        const stateSelector = eachSelector(selector, (one) => `${one}${suffix}`);
+        chunks.push(wrapMedia(`${stateSelector} {\n${stateRules.join("\n")}\n}`));
       }
     }
 
-    const media = mediaQuery(style.media);
     const darkRules = declarations.map(([property, value]) => `  ${property}: ${value};`).join("\n");
     if (style.dark && darkRules.length > 0) {
-      chunks.push(
-        `@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"]) ${selector} {\n${darkRules.replace(/^/gm, "  ")}\n  }\n}`,
+      const prefers = media ? `${media} and (prefers-color-scheme: dark)` : "(prefers-color-scheme: dark)";
+      const prefersSelector = eachSelector(
+        selector,
+        (one) => `:root:not([data-theme="light"]) ${one}`,
       );
-      chunks.push(`[data-theme="dark"] ${selector} {\n${darkRules}\n}`);
-    }
-
-    if (media && declarations.length > 0) {
-      chunks.push(`@media ${media} {\n  ${selector} {\n${declarations
-        .map(([property, value]) => `    ${property}: ${value};`)
-        .join("\n")}\n  }\n}`);
+      chunks.push(
+        `@media ${prefers} {\n  ${prefersSelector} {\n${darkRules.replace(/^/gm, "  ")}\n  }\n}`,
+      );
+      const darkSelector = eachSelector(selector, (one) => `[data-theme="dark"] ${one}`);
+      chunks.push(wrapMedia(`${darkSelector} {\n${darkRules}\n}`));
     }
 
     checkContrast(style, warnings);
@@ -1345,6 +1359,31 @@ button:hover { filter: brightness(0.95); }
 .eng-check input { width: auto; }
 ul, ol { padding-left: 22px; }
 .eng-list li { margin: 6px 0; }
+.eng-list-interactive {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.eng-list-interactive li {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+.eng-list-interactive li:hover { background: color-mix(in srgb, var(--eng-fg) 7%, transparent); }
+.eng-list-interactive li:active { transform: scale(0.99); }
+.eng-list-interactive li[aria-current="true"] {
+  background: color-mix(in srgb, var(--eng-accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--eng-accent);
+}
+.eng-list-interactive li:focus-visible {
+  outline: 2px solid var(--eng-accent);
+  outline-offset: 2px;
+}
 table { border-collapse: collapse; width: 100%; }
 caption { text-align: left; font-weight: 700; padding-bottom: 6px; }
 th, td { border: 1px solid var(--eng-border); padding: 8px 10px; text-align: left; }

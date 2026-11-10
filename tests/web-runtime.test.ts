@@ -563,6 +563,91 @@ test("runs click, form, change, typing, key, resize, hover, and page-open handle
   window.close();
 });
 
+test("returns the selected list item and supports keyboard activation", async () => {
+  const definition: Any = {
+    name: "List select",
+    body: [
+      {
+        kind: "state",
+        name: "items",
+        value: listExpr(
+          tableExpr({ title: t("First"), body: t("One"), pinned: b(true) }),
+          tableExpr({ title: t("Second"), body: t("Two"), pinned: b(false) }),
+        ),
+      },
+      {
+        kind: "when",
+        event: { type: "click", id: "items" },
+        body: [
+          changeText("output", {
+            kind: "property",
+            base: call("value of", t("items")),
+            key: "title",
+          }),
+        ],
+      },
+    ],
+    pages: [
+      page("Home", [
+        node("list", "u9", { id: "items", showing: v("items") }),
+        node("text", "u7", { id: "output", label: t("Ready") }),
+      ]),
+    ],
+  };
+
+  const { document, window } = mount(definition);
+  const list = pick<HTMLElement>(document, '[data-eng-id="items"]');
+  const items = (): HTMLElement[] => Array.from(list.querySelectorAll("li"));
+  assert.equal(list.classList.contains("eng-list-interactive"), true);
+  assert.equal(items()[0]?.textContent, "📌 First");
+  assert.equal(items()[1]?.textContent, "Second");
+  assert.equal(items()[0]?.getAttribute("role"), "button");
+
+  items()[1]?.click();
+  await flush();
+  assert.equal(textOf(document, "output"), "Second");
+  assert.equal(items()[1]?.getAttribute("aria-current"), "true");
+  assert.equal(items()[0]?.getAttribute("aria-current"), null);
+
+  items()[0]?.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true }) as Any,
+  );
+  await flush();
+  assert.equal(textOf(document, "output"), "First");
+  assert.equal(items()[0]?.getAttribute("aria-current"), "true");
+  window.close();
+});
+
+test("highlights a list item chosen with change value before the list renders", async () => {
+  const definition: Any = {
+    name: "List change",
+    body: [
+      {
+        kind: "state",
+        name: "items",
+        value: listExpr(
+          tableExpr({ title: t("First") }),
+          tableExpr({ title: t("Second") }),
+        ),
+      },
+      {
+        kind: "change-of",
+        property: "value",
+        id: "items",
+        value: call("item", n(2), v("items")),
+      },
+    ],
+    pages: [page("Home", [node("list", "u9", { id: "items", showing: v("items") })])],
+  };
+
+  const { document, window } = mount(definition);
+  const list = pick<HTMLElement>(document, '[data-eng-id="items"]');
+  const items = Array.from(list.querySelectorAll("li"));
+  assert.equal(items[0]?.getAttribute("aria-current"), null);
+  assert.equal(items[1]?.getAttribute("aria-current"), "true");
+  window.close();
+});
+
 test("updates dynamic labels, columns, choices, and media", async () => {
   const definition: Any = {
     name: "Dynamic",

@@ -271,6 +271,30 @@ const STYLE_KEYWORDS = new Set([
   "dotted",
 ]);
 
+/** CSS units that attach directly to the number before them, as in `42vh`. */
+const STYLE_UNITS = new Set([
+  "px",
+  "vh",
+  "vw",
+  "vmin",
+  "vmax",
+  "rem",
+  "em",
+  "ex",
+  "ch",
+  "fr",
+  "deg",
+  "rad",
+  "turn",
+  "ms",
+  "s",
+  "pt",
+  "pc",
+  "cm",
+  "mm",
+  "in",
+]);
+
 /** Turns a style value's tokens back into readable text, e.g. `rgb(1, 2, 3)`. */
 function tokensToStyleText(tokens: Token[]): string {
   let text = "";
@@ -295,10 +319,12 @@ function tokensToStyleText(tokens: Token[]): string {
       case "rparen":
         text += ")";
         break;
-      default:
-        if (text.length > 0 && !text.endsWith("(") && !text.endsWith(" ")) text += " ";
+      default: {
+        const joinsNumber = token.kind === "word" && STYLE_UNITS.has(token.lower) && /[\d.]$/.test(text);
+        if (!joinsNumber && text.length > 0 && !text.endsWith("(") && !text.endsWith(" ")) text += " ";
         text += token.text;
         break;
+      }
     }
   }
   return text.replace(/,(\S)/g, ", $1");

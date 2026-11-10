@@ -823,6 +823,7 @@ Try the app examples:
 - [`portfolio`](../examples/portfolio/main.eng) — themes, dark mode, fonts, animation, images, and video
 - [`weather`](../examples/weather/main.eng) — HTTPS data and `try`
 - [`notes`](../examples/notes/main.eng) — text areas and saved notes
+- [`notes-desktop`](../examples/notes-desktop/main.eng) — a Windows 11-style notebook with Fluent fonts, themes, search, pinning, and animations
 - [`pong`](../examples/pong/main.eng) — canvas and keyboard input
 
 ---
@@ -841,12 +842,18 @@ Then open the app:
 node dist/src/cli.js app examples/todo
 ```
 
+For a polished Windows 11 look, try the notebook example. It uses Segoe UI Variable fonts, soft acrylic panels, rounded corners, light and dark themes, search, pinning, and gentle animations:
+
+```text
+node dist/src/cli.js app examples/notes-desktop
+```
+
 EngCode writes a desktop project to `.engcode/desktop`, starts a private local server, and opens the app in an Electron window. The window has no Node.js access, uses context isolation, and runs in a sandbox.
 
 If you do not want to install Electron yet, you can still generate the project:
 
 ```text
-node dist/src/cli.js build windows examples/todo --out dist/windows
+node dist/src/cli.js build windows examples/notes-desktop --out dist/windows
 node dist/src/cli.js build mac examples/notes --out dist/mac
 ```
 

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "EngCode",
+  "scopeName": "source.engcode",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#hex" },
+    { "include": "#number" },
+    { "include": "#property" },
+    { "include": "#block-header" },
+    { "include": "#keyword" },
+    { "include": "#boolean" },
+    { "include": "#builtin" }
+  ],
+  "repository": {
+    "comment": {
+      "match": "\\bnote\\s*:.*$",
+      "name": "comment.line.note.engcode"
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"",
+      "name": "string.quoted.double.engcode",
+      "patterns": [
+        {
+          "match": "\\\\[\"\\\\nt]",
+          "name": "constant.character.escape.engcode"
+        }
+      ]
+    },
+    "hex": {
+      "match": "#[0-9A-Fa-f]{6}\\b|#[0-9A-Fa-f]{3}\\b",
+      "name": "constant.other.color.engcode"
+    },
+    "number": {
+      "match": "\\b-?\\d+(?:\\.\\d+)?\\b",
+      "name": "constant.numeric.engcode"
+    },
+    "property": {
+      "match": "'[sS]\\b",
+      "name": "punctuation.accessor.engcode"
+    },
+    "block-header": {
+      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_ ]*?)(:)\\s*$",
+      "captures": {
+        "1": { "name": "punctuation.whitespace.leading.engcode" },
+        "2": { "name": "entity.name.function.block.engcode" },
+        "3": { "name": "punctuation.section.block.begin.engcode" }
+      }
+    },
+    "keyword": {
+      "patterns": [
+        {
+          "match": "\\b(?:say|ask|set|change|add|remove|if|otherwise|repeat|for|each|count|from|to|while|stop|skip|define|give|back|try|if it fails|use|keep|track|of|as|state|display|show|hide|clear|call|sort|reverse|shuffle|wait|save|load|delete|read|write|append|list|files|get|send|data|with|and|or|is|not|at least|at most|greater than|less than|between|contains|starts with|ends with|empty|in|go|page|popup|play|draw|it|has|can|end|kind|thing|called|default|that|does|gives|the|from|by|level|showing)\\b",
+          "name": "keyword.control.engcode"
+        },
+        {
+          "match": "\\b(?:app|style|everything|theme|dark|mode|when|every|frame|second|seconds|minute|minutes)\\b",
+          "name": "keyword.other.engcode"
+        }
+      ]
+    },
+    "boolean": {
+      "match": "\\b(?:yes|no|nothing|true|false)\\b",
+      "name": "constant.language.engcode"
+    },
+    "builtin": {
+      "patterns": [
+        {
+          "match": "\\b(?:uppercase|lowercase|trim|length|round|floor|ceiling|square root|absolute value|sine|cosine|tangent|number from|random number|random decimal|random item|item|last item|minimum|maximum|power|split|join|replace|position|now|today|format|year|month|day|hour|minute|second)\\b",
+          "name": "support.function.builtin.engcode"
+        }
+      ]
+    }
+  }
+}

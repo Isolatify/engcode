@@ -5,10 +5,24 @@ import * as path from "node:path";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { RuntimeError, renderDiagnostic, type Diagnostic } from "./diagnostics.js";
-import { Interpreter, type InputSource } from "./interpreter.js";
+import { Interpreter, type InputSource, type TraceStep } from "./interpreter.js";
 import { analyze, looksLikeApp } from "./program.js";
 import type { Token } from "./tokens.js";
 import { compileWeb, type WebBuild } from "./web/compiler.js";
+import { display } from "./values.js";
+import { collectEngFiles, formatFile, type FormatResult } from "./formatter.js";
+import { lintSource } from "./lint.js";
+import { explainStatement } from "./explain.js";
+import { isProjectType, projectFiles, PROJECT_TYPES, type ProjectType } from "./templates.js";
+import {
+  allLessons,
+  findLesson,
+  lessonIsCorrect,
+  loadProgress,
+  saveProgress,
+  runLessonExample,
+} from "./learn.js";
+import { playgroundCommand } from "./playground.js";
 import {
   desktopLauncher,
   desktopPackageJson,
@@ -23,7 +37,8 @@ const VERSION = "0.1.0";
 
 interface RunOptions {
   allowNetwork: boolean;
-  allowFiles: boolean;
+  explain: boolean;
+  step: boolean;
 }
 
 class BufferedInput implements InputSource {
@@ -103,6 +118,22 @@ async function main(): Promise<void> {
     case "build":
       process.exitCode = await buildCommand(argv.slice(1));
       return;
+    case "new":
+      process.exitCode = newCommand(argv.slice(1));
+      return;
+    case "format":
+    case "fmt":
+      process.exitCode = formatCommand(argv.slice(1));
+      return;
+    case "lint":
+      process.exitCode = lintCommand(argv.slice(1));
+      return;
+    case "learn":
+      process.exitCode = learnCommand(argv.slice(1));
+      return;
+    case "playground":
+      process.exitCode = await playgroundCommand(argv.slice(1));
+      return;
     default:
       process.stderr.write(`I don't know the command "${command}".\n\n`);
       printHelp();
@@ -123,12 +154,37 @@ function printHelp(): void {
       "  engcode build windows [folder]  make a Windows desktop project in dist/windows/",
       "  engcode build mac [folder]      make a macOS desktop project in dist/mac/",
       "  engcode check file.eng    find mistakes without running",
+      "  engcode lint file.eng     look for risky names and style problems",
+      "  engcode format file.eng   tidy indentation and spacing",
+      "  engcode new my-project    start a script, website, or app",
+      "  engcode learn             the 20-lesson tutorial",
+      "  engcode playground        open a local code playground",
       "  engcode repl              type English and run it right away",
       "  engcode help              show this help",
       "  engcode version           show the version",
       "",
       "Options for run:",
       "  --allow-network           allow https requests in this run",
+      "  --explain                 explain every statement in English",
+      "  --step                    pause between statements",
+      "",
+      "Options for check and lint:",
+      "  --json                    machine-readable diagnostics",
+      "  --strict                  treat warnings as errors",
+      "  --lint                    include linter advice in check",
+      "",
+      "Options for format:",
+      "  --check                   exit 1 if a file would change",
+      "  --stdout                  print the formatted file instead of writing it",
+      "",
+      "Options for new:",
+      "  --type script|website|app|desktop",
+      "",
+      "Options for learn:",
+      "  --run                     run the lesson example",
+      "  --file main.eng           run your own attempt",
+      "  --done                    mark the lesson complete",
+      "  --reset                   clear saved progress",
       "",
       "Options for serve:",
       "  --port 3000               choose the first port to try",
@@ -152,12 +208,20 @@ function printHelp(): void {
 function parseRunOptions(args: string[]): RunOptions {
   return {
     allowNetwork: args.includes("--allow-network"),
-    allowFiles: args.includes("--allow-files"),
+    explain: args.includes("--explain"),
+    step: args.includes("--step"),
   };
+}
+
+class StepQuit extends Error {
+  constructor() {
+    super("Stopped by the learner.");
+  }
 }
 
 function runCommand(args: string[]): number {
   const options = parseRunOptions(args);
+  resetTrace();
   const entry = findEntryFile(args);
   if (!entry) return 1;
   const file = entry.file;
@@ -203,12 +267,23 @@ function runCommand(args: string[]): number {
     input: createInput(),
     fileRoot: root,
     allowNetwork: options.allowNetwork,
+    ...(options.explain || options.step
+      ? {
+          onStep: (step: TraceStep) => {
+            printStep(step, options.step);
+          },
+        }
+      : {}),
   });
 
   try {
     interpreter.run(analysis.program);
     return 0;
   } catch (error) {
+    if (error instanceof StepQuit) {
+      process.stderr.write("\nStopped at your request.\n");
+      return 0;
+    }
     if (error instanceof RuntimeError) {
       process.stderr.write("\n" + renderDiagnostic(error.diagnostic) + "\n\n");
       return 1;
@@ -434,8 +509,59 @@ function reportRuntimeError(error: unknown): void {
   process.stderr.write("\nSomething unexpected went wrong.\n");
 }
 
+let traceCount = 0;
+let traceTruncated = false;
+
+function resetTrace(): void {
+  traceCount = 0;
+  traceTruncated = false;
+}
+
+function printStep(step: TraceStep, pause: boolean): void {
+  traceCount += 1;
+  if (traceCount > 200) {
+    if (!traceTruncated) {
+      traceTruncated = true;
+      process.stderr.write("\n… more steps follow. The explanation stops after 200 steps.\n");
+    }
+    return;
+  }
+
+  process.stderr.write(
+    `\nStep ${step.step} · line ${step.line}\n  ${step.source}\n  → ${explainStatement(step.statement)}\n`,
+  );
+
+  if (!pause) return;
+  if (!process.stdin.isTTY) {
+    process.stderr.write("  (--step needs a terminal to pause; continuing automatically.)\n");
+    return;
+  }
+
+  while (true) {
+    process.stderr.write("  Press Enter for the next step, v for names, or q to quit: ");
+    const answer = readReplLine("");
+    if (answer === null) return;
+    const command = answer.trim().toLowerCase();
+    if (command === "q" || command === "quit") throw new StepQuit();
+    if (command === "v" || command === "variables") {
+      const names = step.env.allNames().sort((a, b) => a.localeCompare(b));
+      if (names.length === 0) {
+        process.stderr.write("  No names yet.\n");
+      } else {
+        for (const name of names) {
+          process.stderr.write(`  ${name} = ${display(step.env.get(name) ?? null)}\n`);
+        }
+      }
+      continue;
+    }
+    return;
+  }
+}
+
 function checkCommand(args: string[]): number {
   const json = args.includes("--json");
+  const includeLint = args.includes("--lint");
+  const strict = args.includes("--strict");
   const entry = findEntryFile(args.filter((arg) => !arg.startsWith("--")));
   if (!entry) return 1;
   const file = entry.file;
@@ -449,22 +575,410 @@ function checkCommand(args: string[]): number {
   }
 
   const analysis = analyze(file, text, { root: entry.root, allowApps: true });
-  const errors = analysis.diagnostics.filter((diagnostic) => diagnostic.severity !== "warning");
+  const diagnostics = includeLint
+    ? [...analysis.diagnostics, ...lintSource(file, text)]
+    : analysis.diagnostics;
+  const errors = diagnostics.filter((diagnostic) => strict || diagnostic.severity !== "warning");
   if (json) {
-    process.stdout.write(JSON.stringify(toJson(analysis.diagnostics), null, 2) + "\n");
+    process.stdout.write(JSON.stringify(toJson(diagnostics), null, 2) + "\n");
     return errors.length > 0 ? 1 : 0;
   }
 
-  printDiagnostics(analysis.diagnostics);
+  printDiagnostics(diagnostics);
   if (errors.length > 0) return 1;
 
-  if (analysis.diagnostics.length > 0) {
-    process.stdout.write(`No errors in ${path.basename(file)}. ${analysis.diagnostics.length} warning${analysis.diagnostics.length === 1 ? "" : "s"}.\n`);
+  if (diagnostics.length > 0) {
+    process.stdout.write(`No errors in ${path.basename(file)}. ${diagnostics.length} warning${diagnostics.length === 1 ? "" : "s"}.\n`);
     return 0;
   }
 
   process.stdout.write(`No problems found in ${path.basename(file)}.\n`);
   return 0;
+}
+
+// ------------------------------------------------------------ project helpers
+
+function optionValue(args: string[], name: string): string | undefined {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+}
+
+function newCommand(args: string[]): number {
+  const target = args.find((arg) => !arg.startsWith("--") && args[args.indexOf(arg) - 1] !== "--type");
+  if (!target) {
+    process.stderr.write(
+      [
+        "Which folder should I create?",
+        "",
+        "Try: engcode new my-project --type script",
+        `Kinds: ${PROJECT_TYPES.join(", ")}`,
+        "",
+      ].join("\n"),
+    );
+    return 1;
+  }
+
+  let type = optionValue(args, "--type") ?? optionValue(args, "--template");
+  if (!type) {
+    if (process.stdin.isTTY) {
+      process.stdout.write(`What kind of project? (${PROJECT_TYPES.join(", ")}) [script]: `);
+      const answer = readReplLine("");
+      type = answer && answer.trim().length > 0 ? answer.trim() : "script";
+      process.stdout.write("\n");
+    } else {
+      type = "script";
+    }
+  }
+  if (!isProjectType(type)) {
+    process.stderr.write(
+      `I don't know the project kind "${type}". Choose ${PROJECT_TYPES.join(", ")}.\n`,
+    );
+    return 1;
+  }
+
+  const folder = path.resolve(target);
+  if (fs.existsSync(folder)) {
+    process.stderr.write(
+      `"${target}" already exists. Choose a new folder name so I never overwrite your work.\n`,
+    );
+    return 1;
+  }
+
+  const kind: ProjectType = type.toLowerCase() as ProjectType;
+  const files = projectFiles(path.basename(folder), kind);
+  fs.mkdirSync(folder, { recursive: true });
+  for (const file of files) {
+    const destination = path.join(folder, file.path);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.writeFileSync(destination, file.content, "utf8");
+  }
+
+  process.stdout.write(
+    [
+      `Created "${path.basename(folder)}" (${kind}) with ${files.length} files.`,
+      `Folder: ${folder}`,
+      "",
+      "Next:",
+      `  cd ${quotePath(target)}`,
+      "  engcode check main.eng",
+      kind === "script" ? "  engcode run main.eng" : "  engcode serve .",
+      kind === "desktop" ? "  engcode app ." : "",
+      "",
+      "Stuck? Run: engcode learn",
+      "",
+    ]
+      .filter((line, index, all) => line.length > 0 || (index > 0 && all[index - 1] !== ""))
+      .join("\n"),
+  );
+  return 0;
+}
+
+function formatCommand(args: string[]): number {
+  const check = args.includes("--check");
+  const stdout = args.includes("--stdout");
+  const positional = args.filter((arg) => !arg.startsWith("--"));
+  const target = positional[0] ?? (fs.existsSync(path.resolve("main.eng")) ? "main.eng" : undefined);
+  if (!target) {
+    process.stderr.write('Which file should I format? Try: engcode format main.eng\n');
+    return 1;
+  }
+
+  let files: string[];
+  try {
+    files = collectEngFiles(target);
+  } catch {
+    process.stderr.write(`I could not find "${target}".\n`);
+    return 1;
+  }
+  if (files.length === 0) {
+    process.stderr.write(`I did not find any .eng files in "${target}".\n`);
+    return 1;
+  }
+  if (stdout && files.length !== 1) {
+    process.stderr.write("--stdout works with one file at a time.\n");
+    return 1;
+  }
+
+  const results: FormatResult[] = [];
+  for (const file of files) {
+    try {
+      results.push(formatFile(file));
+    } catch {
+      process.stderr.write(`I could not read "${file}".\n`);
+      return 1;
+    }
+  }
+
+  const failures = results.filter((result) => result.error);
+  for (const failure of failures) {
+    process.stderr.write(renderDiagnostic(failure.error!) + "\n\n");
+  }
+  if (failures.length > 0) return 1;
+
+  if (stdout) {
+    process.stdout.write(results[0]!.formatted);
+    return 0;
+  }
+
+  if (check) {
+    const changed = results.filter((result) => result.changed);
+    for (const result of changed) {
+      process.stdout.write(`Would format ${displayPath(result.file)}\n`);
+    }
+    process.stdout.write(
+      changed.length === 0
+        ? `${results.length} file${results.length === 1 ? " is" : "s are"} already formatted.\n`
+        : `${changed.length} file${changed.length === 1 ? "" : "s"} would change. Run engcode format to write the changes.\n`,
+    );
+    return changed.length > 0 ? 1 : 0;
+  }
+
+  let written = 0;
+  for (const result of results) {
+    if (!result.changed) continue;
+    fs.writeFileSync(result.file, result.formatted, "utf8");
+    written += 1;
+  }
+  process.stdout.write(
+    written === 0
+      ? `${results.length} file${results.length === 1 ? " is" : "s are"} already formatted.\n`
+      : `Formatted ${written} file${written === 1 ? "" : "s"}.\n`,
+  );
+  return 0;
+}
+
+function lintCommand(args: string[]): number {
+  const json = args.includes("--json");
+  const strict = args.includes("--strict");
+  const positional = args.filter((arg) => !arg.startsWith("--"));
+  const target = positional[0] ?? (fs.existsSync(path.resolve("main.eng")) ? "main.eng" : undefined);
+  if (!target) {
+    process.stderr.write('Which file should I lint? Try: engcode lint main.eng\n');
+    return 1;
+  }
+
+  let files: string[];
+  try {
+    files = collectEngFiles(target);
+  } catch {
+    process.stderr.write(`I could not find "${target}".\n`);
+    return 1;
+  }
+
+  const entries: { file: string; diagnostics: Diagnostic[] }[] = [];
+  for (const file of files) {
+    let text: string;
+    try {
+      text = fs.readFileSync(file, "utf8");
+    } catch {
+      process.stderr.write(`I could not read "${file}".\n`);
+      return 1;
+    }
+    entries.push({ file, diagnostics: lintSource(file, text) });
+  }
+
+  const total = entries.reduce((sum, entry) => sum + entry.diagnostics.length, 0);
+  if (json) {
+    process.stdout.write(
+      JSON.stringify(
+        entries.flatMap((entry) =>
+          toJson(entry.diagnostics).map((item) => ({ file: entry.file, ...(item as object) })),
+        ),
+        null,
+        2,
+      ) + "\n",
+    );
+    return strict && total > 0 ? 1 : 0;
+  }
+
+  for (const entry of entries) {
+    for (const diagnostic of entry.diagnostics) {
+      process.stderr.write(`Warning: ${renderDiagnostic(diagnostic)}\n\n`);
+    }
+  }
+
+  if (total === 0) {
+    process.stdout.write(
+      `No lint notes in ${files.length === 1 ? path.basename(files[0]!) : `${files.length} files`}.\n`,
+    );
+    return 0;
+  }
+  process.stdout.write(
+    `${total} lint note${total === 1 ? "" : "s"} in ${files.length} file${files.length === 1 ? "" : "s"}.\n`,
+  );
+  return strict ? 1 : 0;
+}
+
+function learnCommand(args: string[]): number {
+  const folder = process.cwd();
+  const progress = loadProgress(folder);
+
+  if (args.includes("--reset")) {
+    saveProgress({ completed: [], attempts: {} }, folder);
+    process.stdout.write("Tutorial progress cleared.\n");
+    if (!args.some((arg) => /^\d+$/.test(arg))) return 0;
+  }
+
+  const idArg = args.find((arg) => /^\d+$/.test(arg));
+  if (!idArg) {
+    process.stdout.write(
+      [
+        "EngCode in 20 short lessons",
+        "",
+        ...allLessons().map((lesson) => {
+          const done = progress.completed.includes(lesson.id) ? "✓" : " ";
+          return `  [${done}] ${String(lesson.id).padStart(2)}. ${lesson.title}`;
+        }),
+        "",
+        `${progress.completed.length} of ${allLessons().length} complete.`,
+        "",
+        "Start a lesson with: engcode learn 1",
+        "Run its example with: engcode learn 1 --run",
+        "Try your own file with: engcode learn 1 --file main.eng",
+        "",
+      ].join("\n"),
+    );
+    return 0;
+  }
+
+  const lesson = findLesson(Number(idArg));
+  if (!lesson) {
+    process.stderr.write(`There is no lesson ${idArg}. Choose a number from 1 to ${allLessons().length}.\n`);
+    return 1;
+  }
+
+  if (args.includes("--done")) {
+    if (!progress.completed.includes(lesson.id)) progress.completed.push(lesson.id);
+    saveProgress(progress, folder);
+    process.stdout.write(`Lesson ${lesson.id} marked complete.\n`);
+    return 0;
+  }
+
+  if (args.includes("--run")) {
+    process.stdout.write(`Lesson ${lesson.id}: ${lesson.title}\n\n`);
+    const result = runLessonExample(lesson, folder);
+    for (const diagnostic of result.diagnostics) {
+      process.stderr.write(diagnostic + "\n\n");
+    }
+    if (result.output.length > 0) process.stdout.write(result.output);
+    if (!result.ok) return 1;
+    if (lesson.expected && !lesson.app && !lessonIsCorrect(lesson, result.output)) {
+      process.stdout.write(`\nExpected output:\n${lesson.expected.split("\n").map((line) => "  " + line).join("\n")}\n`);
+      return 1;
+    }
+    process.stdout.write("\nThat is the example. Now try the task yourself.\n");
+    return 0;
+  }
+
+  const attemptFile = optionValue(args, "--file");
+  if (!attemptFile) {
+    process.stdout.write(
+      [
+        `Lesson ${lesson.id}: ${lesson.title}`,
+        "",
+        lesson.idea,
+        "",
+        "Example:",
+        ...lesson.example.split("\n").map((line) => "  " + line),
+        ...(lesson.files ?? []).flatMap((file) => [
+          "",
+          `  ${file.name}:`,
+          ...file.content.split("\n").map((line) => "    " + line),
+        ]),
+        "",
+        `Task: ${lesson.task}`,
+        "",
+        "When you are ready:",
+        `  engcode learn ${lesson.id} --run`,
+        `  engcode learn ${lesson.id} --file main.eng`,
+        "",
+      ].join("\n"),
+    );
+    return 0;
+  }
+
+  const file = path.resolve(attemptFile);
+  let text: string;
+  try {
+    text = fs.readFileSync(file, "utf8");
+  } catch {
+    process.stderr.write(`I could not open "${attemptFile}".\n`);
+    return 1;
+  }
+  const analysis = analyze(file, text, {
+    root: path.dirname(file),
+    allowApps: true,
+  });
+  const errors = analysis.diagnostics.filter((diagnostic) => diagnostic.severity !== "warning");
+  if (errors.length > 0 || !analysis.program) {
+    for (const diagnostic of errors) {
+      process.stderr.write(renderDiagnostic(diagnostic) + "\n\n");
+    }
+    return 1;
+  }
+
+  let output = "";
+  if (!lesson.app) {
+    try {
+      const interpreter = new Interpreter({
+        write: (chunk) => {
+          output += chunk;
+        },
+        input: {
+          readLine: (prompt) => {
+            const answers = lesson.input ?? [];
+            const next = answers.shift();
+            if (next === undefined) {
+              throw new Error(`The lesson expected an answer for "${prompt}".`);
+            }
+            return next;
+          },
+        },
+        fileRoot: path.dirname(file),
+        maxSteps: 100_000,
+      });
+      interpreter.run(analysis.program);
+    } catch (error) {
+      process.stderr.write(
+        `Your program stopped: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      recordAttempt(lesson.id, progress, folder);
+      return 1;
+    }
+  }
+
+  if (output.length > 0) process.stdout.write(output);
+  const correct = lesson.app || lessonIsCorrect(lesson, output);
+  if (correct) {
+    if (!progress.completed.includes(lesson.id)) progress.completed.push(lesson.id);
+    delete progress.attempts[String(lesson.id)];
+    saveProgress(progress, folder);
+    process.stdout.write(`\nLesson ${lesson.id} complete. Well done.\n`);
+    return 0;
+  }
+
+  const attempts = recordAttempt(lesson.id, progress, folder);
+  process.stdout.write("\nNot quite yet.\n");
+  if (lesson.expected) {
+    process.stdout.write(`Expected output:\n${lesson.expected.split("\n").map((line) => "  " + line).join("\n")}\n`);
+  }
+  if (attempts >= 2) {
+    process.stdout.write(`\nHint: ${lesson.hint}\n`);
+  }
+  return 1;
+}
+
+function recordAttempt(id: number, progress: ReturnType<typeof loadProgress>, folder: string): number {
+  const key = String(id);
+  const attempts = (progress.attempts[key] ?? 0) + 1;
+  progress.attempts[key] = attempts;
+  saveProgress(progress, folder);
+  return attempts;
+}
+
+function displayPath(file: string): string {
+  const relative = path.relative(process.cwd(), file);
+  return relative.length > 0 && !relative.startsWith("..") ? relative : file;
 }
 
 // ------------------------------------------------------------------ web builds

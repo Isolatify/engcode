@@ -106,6 +106,19 @@ function display(value: unknown): string {
   return String(value);
 }
 
+/** Lists of tables read best when the table's title is shown instead of every field. */
+function listItemLabel(value: unknown): string {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>;
+    if (typeof record.__display === "string") return record.__display;
+    const title = typeof record.title === "string" ? record.title.trim() : "";
+    if (title.length > 0) return record.pinned === true ? `📌 ${title}` : title;
+    const name = typeof record.name === "string" ? record.name.trim() : "";
+    if (name.length > 0) return name;
+  }
+  return display(value);
+}
+
 function equal(left: unknown, right: unknown): boolean {
   if (left === right) return true;
   if (Array.isArray(left) && Array.isArray(right)) {
@@ -216,6 +229,8 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
   const hiddenByUser = new Set<string>();
   const initialized = new Set<string>();
   const nodeByUid = new Map<string, NodeDefinition>();
+  const selectedListItems = new Map<string, unknown>();
+  const listValues = new Map<string, unknown[]>();
   const pressedKeys = new Set<string>();
   const handlers: StatementDefinition[] = [];
   const timers: StatementDefinition[] = [];
@@ -886,6 +901,8 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
         if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) {
           element.value = "";
         } else if (element) {
+          const uid = element.dataset.engNode;
+          if (uid) selectedListItems.delete(uid);
           element.textContent = "";
         }
         return;
@@ -1170,6 +1187,11 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
   const readValue = (id: unknown): unknown => {
     const element = elementForId(display(id));
     if (!element) return "";
+    if (element instanceof HTMLUListElement) {
+      const uid = element.dataset.engNode;
+      const current = element.querySelector('li[aria-current="true"]');
+      return uid && current && selectedListItems.has(uid) ? selectedListItems.get(uid) : null;
+    }
     if (element instanceof HTMLInputElement) {
       if (element.type === "checkbox" || element.type === "radio") return element.checked;
       if (element.type === "range" || element.type === "number") return element.value === "" ? 0 : Number(element.value);
@@ -1195,6 +1217,26 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
           element instanceof HTMLSelectElement
         ) {
           element.value = display(value);
+        } else if (element instanceof HTMLUListElement) {
+          // Selecting a list value in code updates the visible highlight too,
+          // so opening a note can light up its row in the sidebar.
+          const uid = element.dataset.engNode;
+          if (uid) {
+            // Store the choice even when the list has not rendered its rows yet.
+            // The next render then marks the matching row.
+            selectedListItems.set(uid, value);
+            const items = listValues.get(uid) ?? [];
+            const index = items.findIndex((item) => equal(item, value));
+            if (index >= 0) {
+              Array.from(element.children).forEach((child, childIndex) => {
+                if (!(child instanceof HTMLElement)) return;
+                if (childIndex === index) child.setAttribute("aria-current", "true");
+                else child.removeAttribute("aria-current");
+              });
+              const chosen = element.children[index];
+              if (chosen instanceof HTMLElement) chosen.scrollIntoView?.({ block: "nearest" });
+            }
+          }
         }
         return;
       case "background":
@@ -1311,10 +1353,43 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
       const items = Array.isArray(value) ? value : [];
       const list = element instanceof HTMLUListElement ? element : element.querySelector("ul");
       if (list) {
+        const interactive =
+          node.id !== undefined &&
+          handlers.some(
+            (handler) =>
+              handler.event?.type === "click" &&
+              handler.event.id.toLowerCase() === node.id!.toLowerCase(),
+          );
+        const hasSelection = selectedListItems.has(node.uid);
+        const selected = selectedListItems.get(node.uid);
+        listValues.set(node.uid!, items);
+        list.classList.toggle("eng-list-interactive", interactive);
+        const choose = (index: number): void => {
+          selectedListItems.set(node.uid!, items[index]);
+          Array.from(list.children).forEach((child, childIndex) => {
+            if (!(child instanceof HTMLElement)) return;
+            if (childIndex === index) child.setAttribute("aria-current", "true");
+            else child.removeAttribute("aria-current");
+          });
+        };
         list.replaceChildren(
-          ...items.map((item) => {
+          ...items.map((item, index) => {
             const li = doc.createElement("li");
-            li.textContent = display(item);
+            li.textContent = listItemLabel(item);
+            // A selection made in code should be visible and readable even when
+            // the list has no click handler.
+            if (hasSelection && equal(selected, item)) li.setAttribute("aria-current", "true");
+            if (interactive) {
+              li.tabIndex = 0;
+              li.setAttribute("role", "button");
+              li.addEventListener("click", () => choose(index));
+              li.addEventListener("keydown", (keyboardEvent) => {
+                const key = (keyboardEvent as KeyboardEvent).key;
+                if (key !== "Enter" && key !== " ") return;
+                keyboardEvent.preventDefault();
+                li.click();
+              });
+            }
             return li;
           }),
         );
@@ -1592,22 +1667,29 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
     if (saved === "dark" || saved === "light") {
       doc.documentElement.dataset.theme = saved;
     }
+    const isDark = (): boolean => {
+      const theme = doc.documentElement.dataset.theme;
+      if (theme) return theme === "dark";
+      return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+    };
     const button = doc.createElement("button");
     button.type = "button";
     button.className = "eng-theme-toggle";
-    button.textContent = "Dark mode";
     button.setAttribute("aria-label", "Switch between light and dark mode");
+    const syncLabel = (): void => {
+      button.textContent = isDark() ? "Light mode" : "Dark mode";
+      button.title = isDark() ? "Switch to light mode" : "Switch to dark mode";
+    };
+    syncLabel();
     button.addEventListener("click", () => {
-      const dark = doc.documentElement.dataset.theme
-        ? doc.documentElement.dataset.theme === "dark"
-        : window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
-      const next = dark ? "light" : "dark";
+      const next = isDark() ? "light" : "dark";
       doc.documentElement.dataset.theme = next;
       try {
         window.localStorage.setItem("engcode:theme", next);
       } catch {
         // Ignore storage errors.
       }
+      syncLabel();
     });
     root.prepend(button);
   };

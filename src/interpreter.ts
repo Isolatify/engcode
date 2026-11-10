@@ -42,11 +42,22 @@ export class EmptyInput implements InputSource {
   }
 }
 
+export interface TraceStep {
+  statement: Statement;
+  /** 1-based count of statements executed so far. */
+  step: number;
+  line: number;
+  source: string;
+  env: Env;
+}
+
 export interface InterpreterOptions {
   write?: (text: string) => void;
   input?: InputSource;
   random?: () => number;
   maxSteps?: number;
+  /** Called just before every statement runs. Used by --explain and --step. */
+  onStep?: (step: TraceStep) => void;
   /** Files may only be read or written inside this folder. */
   fileRoot?: string;
   /** Allows HTTPS requests for this run. */
@@ -76,6 +87,7 @@ export class Interpreter {
   private readonly input: InputSource;
   private readonly random: () => number;
   private readonly maxSteps: number;
+  private readonly onStep: ((step: TraceStep) => void) | undefined;
   private readonly fileRoot: string;
   private readonly allowNetwork: boolean;
   private readonly storagePath: string;
@@ -86,6 +98,7 @@ export class Interpreter {
     this.input = options.input ?? new EmptyInput();
     this.random = options.random ?? Math.random;
     this.maxSteps = options.maxSteps ?? 0;
+    this.onStep = options.onStep;
     this.fileRoot = path.resolve(options.fileRoot ?? process.cwd());
     this.allowNetwork = options.allowNetwork ?? false;
     this.storagePath = path.resolve(
@@ -140,6 +153,14 @@ export class Interpreter {
         "Check the loop condition, or press Ctrl+C to stop.",
       );
     }
+
+    this.onStep?.({
+      statement,
+      step: this.steps,
+      line: statement.token.line,
+      source: statement.token.file.lines[statement.token.line - 1]?.trim() ?? "",
+      env,
+    });
 
     switch (statement.kind) {
       case "say": {

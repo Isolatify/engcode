@@ -1,0 +1,89 @@
+{
+  "name": "engcode",
+  "displayName": "EngCode",
+  "description": "Simple English programming for scripts, websites, and desktop apps.",
+  "version": "0.1.0",
+  "publisher": "engcode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "engcode",
+    "english",
+    "beginner"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:engcode"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "engcode",
+        "aliases": [
+          "EngCode",
+          "engcode"
+        ],
+        "extensions": [
+          ".eng"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "engcode",
+        "scopeName": "source.engcode",
+        "path": "./syntaxes/engcode.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "engcode",
+        "path": "./snippets/engcode.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "engcode.runFile",
+        "title": "EngCode: Run File"
+      },
+      {
+        "command": "engcode.serve",
+        "title": "EngCode: Serve App"
+      },
+      {
+        "command": "engcode.explain",
+        "title": "EngCode: Explain File"
+      },
+      {
+        "command": "engcode.check",
+        "title": "EngCode: Check File"
+      }
+    ],
+    "configuration": {
+      "title": "EngCode",
+      "properties": {
+        "engcode.executable": {
+          "type": "string",
+          "default": "engcode",
+          "description": "The EngCode command to run."
+        },
+        "engcode.checkOnType": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check the file shortly after you stop typing."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package"
+  }
+}

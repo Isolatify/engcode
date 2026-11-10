@@ -13,7 +13,7 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 
 ## Status
 
-**Milestone 4 desktop projects are in place.** Terminal scripts, browser apps, and Electron desktop apps all run:
+**Milestones 1–5 are complete.** Terminal scripts, browser apps, and Electron desktop projects all run, and the developer tools are in place:
 
 - variables, `say`, `ask`, conditions, and loops
 - functions, closures, lists, tables, and `try`
@@ -21,17 +21,24 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 - modules with `use "helpers.eng"`
 - files, device storage, `wait`, and HTTPS requests
 - a persistent REPL
-- five runnable terminal examples
+- six runnable terminal examples
 - apps with pages, UI blocks, themes, styles, animations, media, events, timers, routing, storage, web data, and canvas
-- five runnable app examples with DOM smoke tests
+- six runnable app examples with DOM smoke tests, including a Windows 11-styled desktop notebook
 - static websites with `engcode build web`
 - a live-reload development server with `engcode serve`
-- desktop projects with `engcode app`, `engcode build windows`, and `engcode build mac`
-- 261 automated tests, all passing
-- 93.2% line coverage across the language, web compiler, desktop shell, and browser runtime
+- desktop projects with `engcode app`, `engcode build windows`, `engcode build mac`, and `engcode build linux`
+- project scaffolds with `engcode new`
+- a formatter with `engcode format` and a linter with `engcode lint`
+- an English step debugger: `--explain` and `--step`
+- a 20-lesson tutorial with `engcode learn`
+- a local playground with `engcode playground`
+- a VS Code extension in [`editor/vscode`](editor/vscode)
+- install scripts and a release packager
+- 302 automated tests, all passing
+- 95.2% line, 87.8% branch, and 94.1% function coverage across the language, web compiler, desktop shell, browser runtime, and developer tools
 - a one-million-iteration loop in well under two seconds
 
-Desktop builds need Electron, which is installed on demand. The generated project includes the app, a locked-down Electron window, a launcher, and a `npm run package` script for a release folder. Code signing and installers are separate publishing steps.
+Desktop builds need Electron, which is installed on demand. The generated project includes the app, a locked-down Electron window, a launcher, and a `npm run package` script for a release folder. Code signing and notarization are separate publishing steps. The current release also needs Node.js 20 or newer; a Node-free standalone binary is not produced yet.
 
 ## Run a file
 
@@ -173,11 +180,18 @@ Open an app in a native window:
 engcode app examples/todo
 ```
 
+The [`notes-desktop`](examples/notes-desktop/main.eng) example is a complete Windows 11-style notebook. It uses Segoe UI Variable fonts, Fluent acrylic surfaces, light and dark themes, gentle fade and slide animations, search, pinning, and local storage:
+
+```text
+engcode app examples/notes-desktop
+```
+
 Or generate a desktop project for a platform:
 
 ```text
 engcode build windows examples/todo --out dist/windows
 engcode build mac examples/notes --out dist/mac
+engcode build linux examples/notes --out dist/linux
 ```
 
 The folder contains `main.cjs`, `package.json`, `README.md`, the website in `app/`, and a launcher (`run.cmd` or `run.sh`). Install Electron once and start it:
@@ -190,11 +204,63 @@ npm start
 
 `npm run package` creates a release folder with Electron Packager. Build macOS releases on a Mac; code signing and notarization are additional publishing steps. The generated window uses context isolation, keeps Node.js out of the page, runs in a sandbox, serves files from a private `127.0.0.1` address, and sends external HTTPS links to the normal browser.
 
+## Developer tools
+
+Start a new project:
+
+```text
+engcode new my-project            asks for script, website, or app
+engcode new my-project --type app
+```
+
+Keep source tidy and catch problems before running:
+
+```text
+engcode format main.eng           rewrite in the canonical style
+engcode format examples/          format every .eng file
+engcode format --check main.eng   exit 1 if a change is needed
+engcode lint main.eng             report advice; --strict exits 1
+```
+
+Watch a program run, statement by statement:
+
+```text
+engcode run examples/guess/main.eng --explain
+engcode run examples/guess/main.eng --step
+```
+
+Learn the language in 20 short lessons. Progress is saved in `.engcode/learn.json`:
+
+```text
+engcode learn
+engcode learn 7 --run
+engcode learn 7 --file main.eng
+```
+
+Open the local playground in a browser:
+
+```text
+engcode playground
+```
+
+The playground runs scripts in a local server with a 200,000-statement limit and previews apps in a sandboxed iframe. It is a development tool, not a public sandbox.
+
+The VS Code extension adds syntax highlighting, snippets, formatting, diagnostics, and run/serve commands. See [`editor/vscode/README.md`](editor/vscode/README.md).
+
 ## Learn EngCode
 
 - [Getting started](docs/getting-started.md) — a step-by-step guide from your first line to objects, modules, files, the REPL, and web apps.
 - [Design document](docs/design.md) — vision, keywords, semantics, architecture, CLI, sample programs, milestones.
 - [Formal grammar](docs/grammar.md) — EBNF for the whole language, including app and style blocks.
+- [Build apps and websites](docs/apps.md) — pages, blocks, events, state, storage, and web data.
+- [Styling guide](docs/styling.md) — colours, themes, fonts, motion, and responsive rules.
+- [Standard library](docs/stdlib.md) — every built-in phrase.
+- [CLI reference](docs/cli.md) — every command and option.
+- [Security and permissions](docs/security.md) — what a program can touch.
+- [Tutorial](docs/tutorial.md) — the 20 lessons in readable form.
+- [FAQ](docs/faq.md) — common questions and fixes.
+- [Cheat sheet](docs/cheatsheet.md) — one page for quick reference.
+- [Install](docs/install.md) — installers, releases, and editor setup.
 
 A first program:
 
@@ -236,6 +302,7 @@ Terminal scripts:
 | [`guess`](examples/guess/main.eng) | random numbers, `while`, conditions |
 | [`calculator`](examples/calculator/main.eng) | functions, numbers, `otherwise if` |
 | [`quiz`](examples/quiz/main.eng) | lists, tables, scores, `for each` |
+| [`gauntlet`](examples/gauntlet/main.eng) | a longer 15-question language challenge, functions, scoring |
 | [`rock-paper-scissors`](examples/rock-paper-scissors/main.eng) | random items, parentheses, `or` |
 
 Web apps:
@@ -246,6 +313,7 @@ Web apps:
 | [`portfolio`](examples/portfolio/main.eng) | themes, light and dark mode, fonts, animations, images, video |
 | [`weather`](examples/weather/main.eng) | HTTPS data, tables, `try`, network allow list |
 | [`notes`](examples/notes/main.eng) | text areas, saved lists, page-open events |
+| [`notes-desktop`](examples/notes-desktop/main.eng) | Windows 11/Fluent styling, interactive note list, search, pinning, themes, animations |
 | [`pong`](examples/pong/main.eng) | canvas drawing, keyboard input, `every frame` |
 
 Run terminal examples:
@@ -266,52 +334,49 @@ node dist/src/cli.js serve examples/weather
 Or build them all:
 
 ```text
-for example in todo portfolio weather notes pong; do
+for example in todo portfolio weather notes notes-desktop pong; do
   node dist/src/cli.js build web "examples/$example" --out "site/$example"
 done
 ```
 
 ## Commands
 
-Available now:
-
 ```text
+engcode new my-project        scaffold a script, website, or app
 engcode run file.eng          run a terminal script
 engcode run folder            run the entry in engcode.json or main.eng
 engcode serve folder          run an app in the browser with live reload
 engcode serve folder --port 3000 --open
 engcode app folder            open an app in a desktop window
-engcode build web folder       make a static website in dist/
+engcode build web folder      make a static website in dist/
 engcode build web folder --out site --minify
-engcode build windows folder   make a Windows desktop project in dist/windows/
-engcode build mac folder       make a macOS desktop project in dist/mac/
+engcode build windows folder  make a Windows desktop project in dist/windows/
+engcode build mac folder      make a macOS desktop project in dist/mac/
+engcode build linux folder    make a Linux desktop project in dist/linux/
 engcode check file.eng        find mistakes without running
 engcode check --json file.eng machine-readable diagnostics
+engcode format file.eng       rewrite a file in the canonical style
+engcode lint file.eng         report advice; --strict exits 1
 engcode repl                  type English and run it right away
+engcode learn                 the 20-lesson tutorial
+engcode playground            open the local playground
 engcode help                  show help
 engcode version               show the version
 ```
 
-`check` prints accessibility notes as warnings and still exits successfully. Errors exit with code 1.
-
-Planned for later milestones:
-
-```text
-engcode new my-project
-engcode format file.eng
-engcode learn
-```
+Add `--explain` or `--step` to `run` for the statement debugger. Add `--allow-network` to allow HTTPS requests in a terminal run. `check` prints accessibility notes as warnings and still exits successfully; `--strict` turns warnings into failures. Errors exit with code 1.
 
 ## Project layout
 
 ```text
-src/        lexer, parser, checker, interpreter, web compiler, desktop shell, CLI
+src/        lexer, parser, checker, interpreter, web compiler, desktop shell, tools, CLI
 runtime/    dependency-free browser runtime and DOM interpreter
-cli/        installer and launcher assets
 examples/   runnable terminal programs and web apps
-docs/       design, grammar, and guides
+docs/       design, grammar, guides, reference, tutorial, FAQ
 tests/      automated tests for every language feature and example
-editor/     VS Code extension (later milestone)
+editor/     VS Code extension: grammar, snippets, diagnostics, commands
+playground/ local playground page and assets
+scripts/    install and release helpers
 ```
 
 ## Licence
