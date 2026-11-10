@@ -1,0 +1,234 @@
+note: ============================================================
+note: ENCODE // THE GAUNTLET
+note: THE ULTIMATE LANGUAGE CHALLENGE
+note: ============================================================
+
+say " "
+say "============================================================"
+say "                 ENCODE // THE GAUNTLET"
+say "             THE ULTIMATE LANGUAGE CHALLENGE"
+say "============================================================"
+say " "
+say "Welcome, challenger."
+say "You will face 15 questions about EngCode."
+say "Your mission: prove that you understand the language."
+say " "
+say "STAGE 1: THE FOUNDATIONS"
+say "STAGE 2: THE ENGINE ROOM"
+say "STAGE 3: THE FINAL BOSS"
+say " "
+say "One point for every correct answer."
+say "Let's begin!"
+say " "
+
+ask "Enter your coder name" and save it as player
+
+define get rank with points:
+    if points is at least 15:
+        give back "LEGENDARY LANGUAGE ARCHITECT"
+    otherwise if points is at least 13:
+        give back "MASTER COMPILER"
+    otherwise if points is at least 10:
+        give back "ELITE ENGINEER"
+    otherwise if points is at least 7:
+        give back "RISING DEVELOPER"
+    otherwise if points is at least 4:
+        give back "APPRENTICE CODER"
+    otherwise:
+        give back "ROOKIE EXPLORER"
+    end
+end
+
+define get message with points:
+    if points is 15:
+        give back "PERFECT SCORE! Absolutely brilliant."
+    otherwise if points is at least 12:
+        give back "Outstanding work!"
+    otherwise if points is at least 9:
+        give back "Great effort. You know your way around EngCode."
+    otherwise if points is at least 6:
+        give back "Good start. Keep practising!"
+    otherwise:
+        give back "Every expert starts somewhere. Try again!"
+    end
+end
+
+set questions to a list of "What command prints text to the terminal?", "Which command creates or replaces a variable?", "Which command updates an existing variable?", "What word closes an EngCode block?", "What is the first position in an EngCode list?", "Which keyword starts a function definition?", "Which phrase returns a value from a function?", "What value represents true in EngCode?", "What value represents false in EngCode?", "Which loop visits every item in a list?", "Which command adds an item to a list?", "Which keyword introduces an alternative branch?", "Which statement catches a runtime error?", "Which built-in phrase generates a random whole number in a range?", "Which keyword imports another EngCode file?"
+
+set answers to a list of "say", "set", "change", "end", "1", "define", "give back", "yes", "no", "for each", "add", "otherwise", "try", "random number", "use"
+
+set explanations to a list of "say displays output.", "set creates a name or replaces its value.", "change updates an existing name.", "Every colon block is closed with end.", "EngCode lists start at position 1.", "define introduces a reusable function.", "give back returns a result.", "EngCode uses yes for true.", "EngCode uses no for false.", "for each visits every item.", "add value to list appends an item.", "otherwise introduces the alternative branch.", "try catches runtime errors.", "random number from 1 to 10 creates a random whole number in that range.", "use imports another module or file."
+
+set score to 0
+set streak to 0
+set best streak to 0
+set missed to an empty list
+set total questions to length of questions
+
+say " "
+say "================ STAGE 1: FOUNDATIONS ================"
+
+count from 1 to 5 as round:
+    say " "
+    say "QUESTION " plus round plus " / " plus total questions
+    say item round of questions
+
+    ask "Your answer" and save it as response
+
+    if lowercase of response is item round of answers:
+        change score to score plus 1
+        change streak to streak plus 1
+
+        say "CORRECT! +1 POINT."
+        say "Current streak: " plus streak
+
+        if streak is greater than best streak:
+            set best streak to streak
+        end
+
+    otherwise:
+        set streak to 0
+        add item round of questions to missed
+
+        say "INCORRECT."
+        say "Correct answer: " plus item round of answers
+        say item round of explanations
+    end
+
+    say "Current score: " plus score
+end
+
+say " "
+say "================ STAGE 2: ENGINE ROOM ================"
+
+count from 6 to 10 as round:
+    say " "
+    say "QUESTION " plus round plus " / " plus total questions
+    say item round of questions
+
+    ask "Your answer" and save it as response
+
+    if lowercase of response is item round of answers:
+        change score to score plus 1
+        change streak to streak plus 1
+
+        say "CORRECT! THE ENGINE IS RUNNING."
+
+        if streak is greater than best streak:
+            set best streak to streak
+        end
+
+    otherwise:
+        set streak to 0
+        add item round of questions to missed
+
+        say "INCORRECT."
+        say "Correct answer: " plus item round of answers
+        say item round of explanations
+    end
+
+    say "Current score: " plus score
+end
+
+say " "
+say "================ STAGE 3: FINAL BOSS ================"
+
+count from 11 to 15 as round:
+    say " "
+    say "FINAL STAGE // QUESTION " plus round
+    say item round of questions
+
+    ask "Lock in your answer" and save it as response
+
+    if lowercase of response is item round of answers:
+        change score to score plus 1
+        change streak to streak plus 1
+
+        say "BOSS HIT! CORRECT!"
+
+        if streak is greater than best streak:
+            set best streak to streak
+        end
+
+    otherwise:
+        set streak to 0
+        add item round of questions to missed
+
+        say "THE BOSS SURVIVES!"
+        say "Correct answer: " plus item round of answers
+        say item round of explanations
+    end
+
+    say "Score: " plus score plus " / " plus total questions
+end
+
+set percentage to (score times 100) divided by total questions
+set rank to call get rank with score
+set final message to call get message with score
+
+say " "
+say "============================================================"
+say "                  CHALLENGE COMPLETE"
+say "============================================================"
+say " "
+say "PLAYER: " plus player
+say "FINAL SCORE: " plus score plus " / " plus total questions
+say "ACCURACY: " plus percentage plus "%"
+say "BEST STREAK: " plus best streak
+say "FINAL RANK: " plus rank
+say " "
+say final message
+
+if score is 15:
+    say "You mastered every question!"
+    say "The EngCode compiler council welcomes you."
+otherwise if score is at least 10:
+    say "You are ready for advanced EngCode projects."
+otherwise:
+    say "Study the explanations and challenge the arena again."
+end
+
+say " "
+say "================ MISTAKE REVIEW ================"
+
+if length of missed is 0:
+    say "No mistakes. A flawless run!"
+otherwise:
+    say "Questions to practise:"
+    for each missed question in missed:
+        say "- " plus missed question
+    end
+end
+
+say " "
+say "================ BONUS KNOWLEDGE ================"
+say " "
+say "The EngCode engine has several important stages:"
+say " "
+say "1. LEXER"
+say "   Turns source code into tokens."
+say " "
+say "2. PARSER"
+say "   Builds an abstract syntax tree."
+say " "
+say "3. CHECKER"
+say "   Finds mistakes before execution."
+say " "
+say "4. INTERPRETER"
+say "   Executes your program."
+say " "
+say "You just used:"
+say "- Variables and reassignment"
+say "- Lists and list indexing"
+say "- Functions and returned values"
+say "- Comparisons and conditional branches"
+say "- Count loops and for-each loops"
+say "- User input and output"
+say "- Built-in text and length operations"
+say "- Mathematical calculations"
+say "- A score system and report card"
+say " "
+say "Thank you for playing, " plus player plus "!"
+say " "
+say "       ENCODE // BUILD WITH SIMPLE ENGLISH"
+say "============================================================"

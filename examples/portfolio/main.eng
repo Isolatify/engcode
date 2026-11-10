@@ -1,0 +1,126 @@
+note: examples/portfolio/main.eng
+app "Sam's Portfolio":
+    page "Home":
+        navigation bar:
+            link "Home" to "#top"
+            link "Projects" to "#projects"
+            link "Film" to "#film"
+            link "Contact" to "#contact"
+        end
+        section called "top":
+            heading "Sam Carter"
+            paragraph "I build small, friendly websites and games."
+            image "sam.png" with description "A photo of Sam Carter" and width 220 and height 220
+            row:
+                button "Say hello" called "hello button"
+                link "Watch the film" to "#film"
+            end
+        end
+        section called "projects":
+            heading "Projects" level 2
+            grid:
+                card:
+                    heading "Weather Now" level 3
+                    paragraph "A tiny weather app built with EngCode."
+                end
+                card:
+                    heading "Task List" level 3
+                    paragraph "A calm to-do list for busy days."
+                end
+            end
+        end
+        section called "film":
+            heading "A short film" level 2
+            video "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" with description "A flower opening in the sun" and poster "sam.png" and loops and width 640
+        end
+        section called "contact":
+            heading "Contact" level 2
+            paragraph "hello@example.com"
+        end
+        footer:
+            text "Made with EngCode."
+        end
+    end
+end
+
+theme "Day":
+    accent is #0f766e
+    background is #f8fafc
+    surface is white
+    text is #1f2937
+    muted is #64748b
+    border is #e2e8f0
+    font is serif
+    heading font is modern
+    corner radius is 14
+    shadow is soft
+end
+theme "Night" in dark mode:
+    accent is #2dd4bf
+    background is #0f172a
+    surface is #1e293b
+    text is #e2e8f0
+    muted is #94a3b8
+    border is #334155
+end
+
+style everything:
+    background is background
+    text color is text
+    font is font
+end
+
+style headings:
+    color is text
+    animation is fade in over 0.6 seconds
+end
+
+style "hello button":
+    background is accent
+    text color is white
+    rounded corners of 20
+    padding is 14
+    shadow is soft
+    transition is 0.3 seconds
+    when mouse is over:
+        shadow is medium
+        animation is pulse over 1.5 seconds forever
+    end
+end
+
+style cards:
+    background is surface
+    border is border
+    rounded corners of 14
+    shadow is soft
+    animation is slide up over 0.5 seconds
+    when mouse is over:
+        animation is float over 2 seconds forever
+    end
+end
+
+style images:
+    object fit is cover
+    rounded corners of 12
+end
+
+style video:
+    rounded corners of 12
+    shadow is medium
+end
+
+style navigation bar:
+    animation is slide down over 0.4 seconds
+end
+
+style "contact":
+    animation is fade in over 0.8 seconds
+end
+
+style section on small screens:
+    padding is 12
+end
+
+when "hello button" is clicked:
+    say "Thanks for stopping by!"
+end

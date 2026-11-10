@@ -1,0 +1,16 @@
+note: examples/quiz/main.eng
+set score to 0
+set questions to a list of a table with question "What is 2 plus 2?", answer "4" and a table with question "What is the capital of France?", answer "Paris" and a table with question "What is 5 times 3?", answer "15"
+
+for each question in questions:
+    say question's question
+    ask "Your answer" and save it as reply
+    if reply is question's answer:
+        say "Correct!"
+        add 1 to score
+    otherwise:
+        say "Not quite. The answer is " plus question's answer
+    end
+end
+
+say "You scored " plus score plus " out of " plus length of questions

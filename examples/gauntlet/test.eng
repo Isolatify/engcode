@@ -1,0 +1,3 @@
+set numbers to a list of 10, 20, 30
+set position to 2
+say item position of numbers

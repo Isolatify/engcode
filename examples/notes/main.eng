@@ -1,0 +1,40 @@
+note: examples/notes/main.eng
+app "Notes":
+    page "Home":
+        heading "My Notes"
+        text area called "note" with label "Note" and hint "Write something..."
+        row:
+            button "Save note" called "save button"
+            button "Clear all" called "clear button"
+        end
+        list called "notes" showing saved notes
+    end
+end
+
+keep track of saved notes as an empty list
+
+style everything:
+    font is "Helvetica"
+    background is #f8fafc
+end
+
+when the page opens:
+    load "notes" from the device and save it as loaded
+    if loaded is not nothing:
+        set saved notes to loaded
+    end
+end
+
+when "save button" is clicked:
+    set note to value of "note"
+    if note is not empty:
+        add note to saved notes
+        save saved notes to the device as "notes"
+        clear "note"
+    end
+end
+
+when "clear button" is clicked:
+    set saved notes to an empty list
+    save saved notes to the device as "notes"
+end

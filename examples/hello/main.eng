@@ -1,0 +1,4 @@
+note: Your first EngCode program.
+say "Hello, world!"
+ask "What is your name?" and save it as name
+say "Hello, " plus name plus "! Welcome to EngCode."

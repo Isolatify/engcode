@@ -1,0 +1,32 @@
+note: examples/weather/main.eng
+app "Weather Now":
+    page "Home":
+        heading "Weather Now"
+        row:
+            input called "latitude" with label "Latitude" and hint "For example 52.52"
+            input called "longitude" with label "Longitude" and hint "For example 13.41"
+            button "Check" called "check button"
+        end
+        card:
+            heading "Current weather" level 2
+            text "Press Check to begin." called "result"
+        end
+    end
+end
+
+style everything:
+    font is "Helvetica"
+    background is #eef2ff
+end
+
+when "check button" is clicked:
+    set latitude to value of "latitude"
+    set longitude to value of "longitude"
+    set address to "https://api.open-meteo.com/v1/forecast?latitude=" plus latitude plus "&longitude=" plus longitude plus "&current=temperature_2m,wind_speed_10m"
+    try:
+        get data from address and save it as weather
+        change text of "result" to "It is " plus weather's current's temperature_2m plus " degrees Celsius, with wind at " plus weather's current's wind_speed_10m plus " km/h."
+    if it fails:
+        change text of "result" to "Sorry, I could not read the weather. " plus the error
+    end
+end

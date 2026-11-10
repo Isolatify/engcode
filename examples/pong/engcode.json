@@ -1,0 +1,5 @@
+{
+  "name": "pong",
+  "type": "app",
+  "entry": "main.eng"
+}

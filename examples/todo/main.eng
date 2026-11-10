@@ -1,0 +1,59 @@
+note: examples/todo/main.eng
+app "Todo List":
+    page "Home":
+        heading "My Tasks"
+        row:
+            input called "new task" with label "New task" and hint "Add a task"
+            button "Add" called "add button"
+        end
+        list called "task list" showing tasks
+        divider
+        row:
+            button "Clear all" called "clear button"
+            text "Saved on this device."
+        end
+    end
+end
+
+keep track of tasks as an empty list
+
+style everything:
+    font is "Helvetica"
+    background is light gray
+    text color is black
+end
+
+style "add button":
+    background is blue
+    text color is white
+    rounded corners of 8
+    padding is 12
+    when mouse is over:
+        background is dark blue
+    end
+end
+
+style "task list" on small screens:
+    width is full
+end
+
+when "add button" is clicked:
+    set task to value of "new task"
+    if task is not empty:
+        add task to tasks
+        clear "new task"
+        save tasks to the device as "tasks"
+    end
+end
+
+when "clear button" is clicked:
+    set tasks to an empty list
+    save tasks to the device as "tasks"
+end
+
+when the page opens:
+    load "tasks" from the device and save it as saved tasks
+    if saved tasks is not nothing:
+        set tasks to saved tasks
+    end
+end

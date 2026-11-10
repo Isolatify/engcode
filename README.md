@@ -13,7 +13,7 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 
 ## Status
 
-**Milestone 3 complete.** Terminal scripts and browser apps both run:
+**Milestone 4 desktop projects are in place.** Terminal scripts, browser apps, and Electron desktop apps all run:
 
 - variables, `say`, `ask`, conditions, and loops
 - functions, closures, lists, tables, and `try`
@@ -22,15 +22,16 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 - files, device storage, `wait`, and HTTPS requests
 - a persistent REPL
 - five runnable terminal examples
-- apps with pages, UI blocks, styles, events, timers, routing, storage, web data, and canvas
+- apps with pages, UI blocks, themes, styles, animations, media, events, timers, routing, storage, web data, and canvas
 - five runnable app examples with DOM smoke tests
 - static websites with `engcode build web`
 - a live-reload development server with `engcode serve`
-- 250 automated tests, all passing
+- desktop projects with `engcode app`, `engcode build windows`, and `engcode build mac`
+- 259 automated tests, all passing
 - 93.1% line coverage across the language, web compiler, and browser runtime
 - a one-million-iteration loop in well under two seconds
 
-Desktop packaging is Milestone 4. In this build, `engcode run` handles terminal scripts and points app files at `engcode serve` or `engcode build web`.
+Desktop builds need Electron, which is installed on demand. The generated project includes the app, a locked-down Electron window, a launcher, and a `npm run package` script for a release folder. Code signing and installers are separate publishing steps.
 
 ## Run a file
 
@@ -100,6 +101,43 @@ when "add" is clicked:
 end
 ```
 
+Themes name your colours and fonts once, then styles reuse them. Dark values follow the visitor's system preference:
+
+```eng
+theme "Day":
+    accent is #2563eb
+    background is #f8fafc
+    text is #1f2937
+    font is modern
+    corner radius is 12
+end
+
+theme "Night" in dark mode:
+    background is #0f172a
+    text is #e2e8f0
+end
+
+style everything:
+    background is background
+    text color is text
+    font is font
+end
+
+style cards:
+    animation is slide up over 0.5 seconds
+    when mouse is over:
+        animation is float over 2 seconds forever
+    end
+end
+```
+
+Images, video, and audio take `with description`, `width`, `height`, `poster`, and `loops`:
+
+```eng
+image "sam.png" with description "A photo of Sam" and width 220 and height 220
+video "tour.mp4" with description "A studio tour" and poster "cover.jpg" and loops
+```
+
 Run it with live reload while you edit:
 
 ```text
@@ -126,6 +164,31 @@ Apps may read device storage with `save ... to the device` and `load ... from th
   "allow": { "network": ["api.open-meteo.com"] }
 }
 ```
+
+## Build a desktop app
+
+Open an app in a native window:
+
+```text
+engcode app examples/todo
+```
+
+Or generate a desktop project for a platform:
+
+```text
+engcode build windows examples/todo --out dist/windows
+engcode build mac examples/notes --out dist/mac
+```
+
+The folder contains `main.cjs`, `package.json`, `README.md`, the website in `app/`, and a launcher (`run.cmd` or `run.sh`). Install Electron once and start it:
+
+```text
+cd dist/windows
+npm install
+npm start
+```
+
+`npm run package` creates a release folder with Electron Packager. Build macOS releases on a Mac; code signing and notarization are additional publishing steps. The generated window uses context isolation, keeps Node.js out of the page, runs in a sandbox, serves files from a private `127.0.0.1` address, and sends external HTTPS links to the normal browser.
 
 ## Learn EngCode
 
@@ -217,8 +280,11 @@ engcode run file.eng          run a terminal script
 engcode run folder            run the entry in engcode.json or main.eng
 engcode serve folder          run an app in the browser with live reload
 engcode serve folder --port 3000 --open
+engcode app folder            open an app in a desktop window
 engcode build web folder       make a static website in dist/
 engcode build web folder --out site --minify
+engcode build windows folder   make a Windows desktop project in dist/windows/
+engcode build mac folder       make a macOS desktop project in dist/mac/
 engcode check file.eng        find mistakes without running
 engcode check --json file.eng machine-readable diagnostics
 engcode repl                  type English and run it right away
@@ -232,9 +298,6 @@ Planned for later milestones:
 
 ```text
 engcode new my-project
-engcode app
-engcode build windows
-engcode build mac
 engcode format file.eng
 engcode learn
 ```

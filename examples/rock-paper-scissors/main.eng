@@ -1,0 +1,13 @@
+note: examples/rock-paper-scissors/main.eng
+set moves to a list of "rock", "paper", "scissors"
+ask "Choose rock, paper, or scissors" and save it as player
+set computer to random item of moves
+say "Computer chose " plus computer
+
+if player is computer:
+    say "It is a tie."
+otherwise if (player is "rock" and computer is "scissors") or (player is "paper" and computer is "rock") or (player is "scissors" and computer is "paper"):
+    say "You win!"
+otherwise:
+    say "Computer wins!"
+end

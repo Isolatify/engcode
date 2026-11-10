@@ -1,0 +1,23 @@
+note: examples/calculator/main.eng
+define calculate with first, operation and second:
+    if operation is "plus":
+        give back first plus second
+    otherwise if operation is "minus":
+        give back first minus second
+    otherwise if operation is "times":
+        give back first times second
+    otherwise if operation is "divided by":
+        if second is 0:
+            give back "You cannot divide by zero."
+        end
+        give back first divided by second
+    otherwise:
+        give back "I do not know that operation."
+    end
+end
+
+ask for a number "First number" and save it as first
+ask "Operation (plus, minus, times, divided by)" and save it as operation
+ask for a number "Second number" and save it as second
+set answer to calculate first, operation, second
+say "Result: " plus answer

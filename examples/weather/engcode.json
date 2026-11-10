@@ -1,0 +1,6 @@
+{
+  "name": "weather",
+  "type": "app",
+  "entry": "main.eng",
+  "allow": { "network": ["api.open-meteo.com"] }
+}

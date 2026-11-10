@@ -1,0 +1,38 @@
+{
+  "name": "engcode",
+  "version": "0.1.0",
+  "description": "Build with Simple English",
+  "type": "module",
+  "bin": {
+    "engcode": "dist/src/cli.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/tests/",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-exclude=\"dist/src/cli.js\" dist/tests/",
+    "engcode": "node dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "language",
+    "compiler",
+    "beginner",
+    "english",
+    "education"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "happy-dom": "^21.0.4",
+    "typescript": "^5.7.2"
+  }
+}

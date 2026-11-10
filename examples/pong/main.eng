@@ -1,0 +1,54 @@
+note: examples/pong/main.eng
+app "Pong":
+    page "Play":
+        heading "Pong"
+        canvas called "board" with width 800 and height 500
+        text "Use W and S to move. Keep the ball in play." called "status"
+    end
+end
+
+keep track of paddle as 200
+keep track of ball x as 400
+keep track of ball y as 250
+keep track of ball speed x as 4
+keep track of ball speed y as 3
+keep track of hits as 0
+
+style everything:
+    font is "Helvetica"
+    background is #111827
+    text color is white
+end
+
+every frame:
+    if key "w" is pressed:
+        change paddle to paddle minus 6
+    end
+    if key "s" is pressed:
+        change paddle to paddle plus 6
+    end
+    set paddle to maximum of 0 and minimum of 420 and paddle
+
+    change ball x to ball x plus ball speed x
+    change ball y to ball y plus ball speed y
+
+    if ball y is less than 0 or ball y is greater than 488:
+        change ball speed y to 0 minus ball speed y
+    end
+
+    if ball x is less than 40 and ball y is at least paddle and ball y is at most paddle plus 80:
+        set ball x to 40
+        change ball speed x to 0 minus ball speed x
+        add 1 to hits
+    end
+
+    if ball x is greater than 800:
+        set ball x to 400
+        set ball y to 250
+    end
+
+    clear canvas "board" to #111827
+    draw rectangle on "board" at x 20 and y paddle with width 12 and height 80 in white
+    draw circle on "board" at x ball x and y ball y with size 12 in white
+    draw text "Hits: " plus hits on "board" at x 640 and y 20 in white
+end

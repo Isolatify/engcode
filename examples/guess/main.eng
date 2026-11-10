@@ -1,0 +1,17 @@
+note: Guess the secret number between 1 and 100.
+set secret to random number from 1 to 100
+set guesses to 0
+set found to no
+
+while found is no:
+    ask for a number "Guess a number from 1 to 100" and save it as guess
+    change guesses to guesses plus 1
+    if guess is less than secret:
+        say "Higher!"
+    otherwise if guess is greater than secret:
+        say "Lower!"
+    otherwise:
+        say "You got it in " plus guesses plus " guesses!"
+        set found to yes
+    end
+end
