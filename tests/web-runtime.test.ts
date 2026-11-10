@@ -380,6 +380,23 @@ test("evaluates expressions, built-ins, loops, functions, kinds, and errors", ()
   window.close();
 });
 
+test("ignores theme declarations when the app starts", () => {
+  const definition: Any = {
+    name: "Theme",
+    body: [
+      { kind: "theme", name: "Day", dark: false, declarations: [] },
+      { kind: "theme", name: "Night", dark: true, declarations: [] },
+      { kind: "state", name: "ready", value: t("yes") },
+      changeText("output", v("ready")),
+    ],
+    pages: [page("Home", [node("text", "u7", { id: "output", label: t("Ready") })])],
+  };
+
+  const { document, window } = mount(definition);
+  assert.equal(textOf(document, "output"), "yes");
+  window.close();
+});
+
 test("runs click, form, change, typing, key, resize, hover, and page-open handlers", async () => {
   const definition: Any = {
     name: "Events",

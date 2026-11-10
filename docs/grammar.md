@@ -503,7 +503,7 @@ nullary_phrase  = "now" | "today" | "pi" ;
 ```ebnf
 app_decl        = "app" expression ":" app_block "end" ;
 app_block       = NEWLINE { app_item NEWLINE } ;
-app_item        = page_decl | style_decl | state_decl | event_decl | use_decl ;
+app_item        = page_decl | style_decl | theme_decl | state_decl | event_decl | use_decl ;
 
 page_decl       = "page" expression ":" page_block "end" ;
 page_block      = NEWLINE { ui_block NEWLINE } ;

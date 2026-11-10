@@ -27,8 +27,8 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 - static websites with `engcode build web`
 - a live-reload development server with `engcode serve`
 - desktop projects with `engcode app`, `engcode build windows`, and `engcode build mac`
-- 259 automated tests, all passing
-- 93.1% line coverage across the language, web compiler, and browser runtime
+- 261 automated tests, all passing
+- 93.2% line coverage across the language, web compiler, desktop shell, and browser runtime
 - a one-million-iteration loop in well under two seconds
 
 Desktop builds need Electron, which is installed on demand. The generated project includes the app, a locked-down Electron window, a launcher, and a `npm run package` script for a release folder. Code signing and installers are separate publishing steps.
@@ -243,7 +243,7 @@ Web apps:
 | Example | What it shows |
 | --- | --- |
 | [`todo`](examples/todo/main.eng) | forms, lists, device storage, hover styles |
-| [`portfolio`](examples/portfolio/main.eng) | navigation, sections, cards, images, links |
+| [`portfolio`](examples/portfolio/main.eng) | themes, light and dark mode, fonts, animations, images, video |
 | [`weather`](examples/weather/main.eng) | HTTPS data, tables, `try`, network allow list |
 | [`notes`](examples/notes/main.eng) | text areas, saved lists, page-open events |
 | [`pong`](examples/pong/main.eng) | canvas drawing, keyboard input, `every frame` |
@@ -305,7 +305,7 @@ engcode learn
 ## Project layout
 
 ```text
-src/        lexer, parser, checker, interpreter, web compiler, CLI
+src/        lexer, parser, checker, interpreter, web compiler, desktop shell, CLI
 runtime/    dependency-free browser runtime and DOM interpreter
 cli/        installer and launcher assets
 examples/   runnable terminal programs and web apps

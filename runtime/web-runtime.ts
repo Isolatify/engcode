@@ -871,6 +871,7 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
       case "use":
       case "app":
       case "style":
+      case "theme":
         return;
       case "show":
         hiddenByUser.delete(String(statement.id).toLowerCase());
@@ -1641,7 +1642,13 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
   }
 
   for (const statement of definition.body) {
-    if (statement.kind === "app" || statement.kind === "style") continue;
+    if (
+      statement.kind === "app" ||
+      statement.kind === "style" ||
+      statement.kind === "theme"
+    ) {
+      continue;
+    }
     if (statement.kind === "when") {
       handlers.push(statement);
       continue;

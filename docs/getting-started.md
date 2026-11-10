@@ -815,12 +815,12 @@ The compiler adds a skip link, page headings, form labels, image descriptions, f
 node dist/src/cli.js check examples/todo/main.eng
 ```
 
-Notes such as a missing image description are warnings, so they do not stop your build. Fix them when you can: they make the app easier for everyone to use.
+Notes such as a missing image, video, or audio description are warnings, so they do not stop your build. Fix them when you can: they make the app easier for everyone to use.
 
 Try the app examples:
 
 - [`todo`](../examples/todo/main.eng) — lists, storage, and hovers
-- [`portfolio`](../examples/portfolio/main.eng) — navigation and cards
+- [`portfolio`](../examples/portfolio/main.eng) — themes, dark mode, fonts, animation, images, and video
 - [`weather`](../examples/weather/main.eng) — HTTPS data and `try`
 - [`notes`](../examples/notes/main.eng) — text areas and saved notes
 - [`pong`](../examples/pong/main.eng) — canvas and keyboard input

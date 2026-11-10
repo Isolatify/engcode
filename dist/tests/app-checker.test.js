@@ -63,6 +63,16 @@ test("warns about images without descriptions", () => {
     assert.equal(result.errors.length, 0);
     assert.match(result.warnings[0].message, /no description/);
 });
+test("warns about video and audio without descriptions", () => {
+    const result = check(app([
+        '        heading "Hello"',
+        '        video "clip.mp4"',
+        '        audio "sound.mp3"',
+    ].join("\n")));
+    assert.equal(result.errors.length, 0);
+    assert.match(result.warnings[0].message, /video has no description/);
+    assert.match(result.warnings[1].message, /audio has no description/);
+});
 test("warns about skipped heading levels", () => {
     const result = check(app(['        heading "Hello"', '        heading "Deep" level 3'].join("\n")));
     assert.equal(result.errors.length, 0);

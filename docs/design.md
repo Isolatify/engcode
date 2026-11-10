@@ -813,7 +813,7 @@ If the closure backend misses the gate, the resolved AST can be lowered to a sma
 
 - The browser runtime is framework-free. It exposes `state`, `render`, `bind`, `fetchJSON`, `storage`, `router`, `canvas`, and `toast`.
 - Handlers are compiled to async functions when they contain `get data`, `send data`, or `wait`; otherwise they stay synchronous.
-- Desktop packaging uses Electron. `engcode app` opens a secure BrowserWindow pointed at the dev server. `engcode build windows` invokes electron-builder for an NSIS `.exe`/`.msi`; `engcode build mac` produces `.app`/`.dmg` **on macOS** (cross-building a signed macOS app from Windows is not supported by Electron).
+- Desktop packaging uses Electron. `engcode app` opens a secure BrowserWindow pointed at a private loopback server. `engcode build windows` and `engcode build mac` write a runnable Electron project with `main.cjs`, the web build, a launcher, and Electron Packager scripts. Code signing and installers are publishing steps layered on top of the packaged release; macOS releases must be built on macOS.
 - A future `--tauri` packaging adapter can reuse the same generated web assets. No language change is needed.
 
 ---
@@ -826,8 +826,8 @@ engcode new my-project        scaffold a script, website, or app
 engcode serve                 run an app/website in the browser with live reload
 engcode app                   run the app in a native desktop window
 engcode build web             produce a static website (HTML + CSS + JS)
-engcode build windows         produce a Windows installer / executable
-engcode build mac             produce a macOS app / dmg
+engcode build windows         produce a Windows desktop project / release folder
+engcode build mac             produce a macOS desktop project / release folder
 engcode check file.eng        find mistakes without running
 engcode format file.eng       auto-format code
 engcode repl                  interactive prompt
@@ -855,7 +855,7 @@ Common options:
 - `engcode new` prompts for a type when `--type` is omitted. It creates `main.eng`, `engcode.json`, `.gitignore`, and a short README. It never overwrites an existing folder.
 - `engcode serve` watches every `.eng` file in the project and rebuilds in memory. Browser reload is driven by SSE; if the port is busy it tries the next one and prints the URL.
 - `engcode app` builds, starts the local server, and opens Electron. Closing the window stops the server.
-- `engcode build windows` and `build mac` call electron-builder. The output is reported with the absolute path and size. macOS builds must run on macOS.
+- `engcode build windows` and `build mac` generate a self-contained Electron project and report its absolute path. `npm run package` inside that project produces a release folder with Electron Packager. macOS builds must run on macOS.
 - `engcode repl` keeps state between lines, supports multi-line blocks (the prompt changes to `...` until `end`), and offers `:help`, `:clear`, `:load file.eng`, `:quit`.
 - `engcode learn` stores progress in `.engcode/learn.json`; `engcode learn 4` starts at lesson 4.
 - Exit codes: `0` success, `1` user error (syntax/semantic/runtime), `2` internal error. Internal errors print a short apology and ask for the file, never a raw stack trace unless `--debug`.

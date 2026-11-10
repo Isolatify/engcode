@@ -177,6 +177,7 @@ function runCommand(args: string[]): number {
         "",
         "Open it in the browser with: engcode serve " + quotePath(entry.root),
         "Or build a static website with: engcode build web " + quotePath(entry.root),
+        "Or open a desktop window with: engcode app " + quotePath(entry.root),
         "",
       ].join("\n"),
     );

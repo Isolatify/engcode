@@ -565,6 +565,13 @@ export class Checker {
             'Add with description "..." so screen readers can describe it.',
           );
         }
+        if ((node.element === "video" || node.element === "audio") && !node.description) {
+          this.warn(
+            `This ${node.element} has no description.`,
+            node.token,
+            'Add with description "..." so screen readers can name it.',
+          );
+        }
         if (
           node.element === "input" ||
           node.element === "text area" ||
