@@ -1362,7 +1362,7 @@ Fuzz the parser with malformed English input, audit capability escapes, test Win
 - **macOS packaging** cannot be produced from Windows. Mitigation: a documented macOS CI job and a script that is tested on macOS before claiming support.
 - **Network examples** depend on a public API and CORS. Mitigation: Open-Meteo supports browser CORS and needs no key; tests mock the response.
 - **Scope.** The app layer is large. Mitigation: blocks are table-driven; the compiler has one element mapping per block kind, not bespoke code per example.
-- **Release packaging.** Install URLs use a release host that does not exist yet, and signed installers plus a Node-free binary need platform credentials and tooling. Mitigation: `npm pack`, the release packager, and both local installers work now; public URLs, signing, and a standalone binary are wired at release time.
+- **Release packaging.** Installation goes through the npm registry (`npm install -g engcode`); there are no install URLs to host. Signed installers plus a Node-free binary need platform credentials and tooling. Mitigation: `npm pack`, the release packager, and both local installers work now; signing, and a standalone binary are wired at release time.
 
 ---
 

@@ -1,28 +1,70 @@
 # Install EngCode
 
-EngCode needs **Node.js 20 or newer**. The compiler, runtime, tutorial, examples, docs, playground, and editor support are included in the package. After installation, everything works offline.
+EngCode needs **Node.js 20 or newer**. The compiler, CLI, runtime, tutorial, examples, docs, and playground are included in the package. After installation, everything works offline.
 
-## The shortest install
+## Install from npm
 
-When EngCode is published to npm:
+This is the recommended way to install EngCode on every platform:
 
 ```text
 npm install -g engcode
 engcode --version
 ```
 
-From a checkout of this repository:
+### Windows (PowerShell)
+
+```powershell
+npm install -g engcode
+engcode --version
+```
+
+If PowerShell restricts npm scripts, call `npm.cmd` directly:
+
+```powershell
+npm.cmd install -g engcode
+engcode --version
+```
+
+### macOS
+
+```sh
+npm install -g engcode
+engcode --version
+```
+
+### Linux
+
+```sh
+npm install -g engcode
+engcode --version
+```
+
+If npm reports `EACCES` (a permission error), either run the command with `sudo`, or configure a prefix your own account owns:
+
+```sh
+npm config set prefix "$HOME/.npm-global"
+```
+
+Add `$HOME/.npm-global/bin` to your `PATH` and run `npm install -g engcode` again.
+
+## Install from a checkout
+
+From a clone of this repository, pack the tarball and install it:
 
 ```text
 npm install
 npm run build
-npm install -g .
+npm pack
+npm install -g ./engcode-1.0.0.tgz
 engcode --version
 ```
+
+`npm pack` produces the same tarball the registry serves. Do not use `npm install -g .` on the checkout: npm copies a folder as it is, which would bring tests, sources, and `node_modules` along. The install scripts below do the packing for you.
 
 If you only want to try it without installing a command:
 
 ```text
+npm install
 npm run build
 node dist/src/cli.js run examples/hello/main.eng
 ```
@@ -32,55 +74,50 @@ On Windows PowerShell, use `npm.cmd` if script execution is restricted:
 ```text
 npm.cmd install
 npm.cmd run build
-npm.cmd install -g .
+npm.cmd pack
+npm.cmd install -g .\engcode-1.0.0.tgz
 ```
 
 ## Install scripts
 
-The repository includes installers for Windows and macOS/Linux. They check Node.js, install the package globally, and verify the `engcode` command.
+The repository includes installers for Windows and macOS/Linux. They check for Node.js 20 or newer, install the package globally, and verify the `engcode` command. Without options they install the published npm package. Given a folder, they pack it with `npm pack` first (or use the `engcode-*.tgz` inside a release folder), so a checkout is never copied wholesale.
 
-### Windows
+### Windows (PowerShell)
 
 ```powershell
+# From the published npm package
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+
 # From a checkout or release folder
 powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -From .
 
-# From an npm package
-powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+# From a packed npm tarball
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -From .\release\engcode-1.0.0.tgz
 
 # A specific version
-powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Version 0.1.0
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -Version 1.0.0
 
 # A custom prefix
 powershell -ExecutionPolicy Bypass -File scripts/install.ps1 -From . -Prefix C:\Tools\engcode
 ```
 
-When a published install URL exists, the one-line form is:
-
-```powershell
-irm https://<your-release-host>/install.ps1 | iex
-```
-
 ### macOS and Linux
 
 ```sh
+# From the published npm package
+sh scripts/install.sh
+
 # From a checkout or release folder
 sh scripts/install.sh --from .
 
-# From an npm package
-sh scripts/install.sh
+# From a packed npm tarball
+sh scripts/install.sh --from ./release/engcode-1.0.0.tgz
 
 # A specific version
-sh scripts/install.sh --version 0.1.0
+sh scripts/install.sh --version 1.0.0
 
 # A custom prefix
 sh scripts/install.sh --from . --prefix "$HOME/.local"
-```
-
-When a published install URL exists, the one-line form is:
-
-```sh
-curl -fsSL https://<your-release-host>/install.sh | sh
 ```
 
 Both scripts refuse to continue when Node.js is missing or older than 20, and they report a failed `npm install` instead of pretending it worked.
@@ -101,8 +138,8 @@ The script builds the TypeScript, packs the npm tarball, and writes:
 
 ```text
 release/
-  engcode-0.1.0.tgz          npm package
-  engcode-0.1.0/             portable folder
+  engcode-1.0.0.tgz          npm package
+  engcode-1.0.0/             portable folder
     dist/                    compiler, CLI, runtime, tests
     docs/                    guides and reference
     examples/                runnable projects
@@ -119,21 +156,21 @@ release/
 Install from the release folder:
 
 ```powershell
-.\release\install.ps1 -From .\release
+.\release\install.ps1 -From .\release\engcode-1.0.0.tgz
 ```
 
 ```sh
-sh release/install.sh --from ./release
+sh release/install.sh --from ./release/engcode-1.0.0.tgz
 ```
 
 Or run the portable folder directly without installing:
 
 ```powershell
-.\release\engcode-0.1.0\engcode.cmd --version
+.\release\engcode-1.0.0\engcode.cmd --version
 ```
 
 ```sh
-./release/engcode-0.1.0/engcode --version
+./release/engcode-1.0.0/engcode --version
 ```
 
 The portable launchers call `node dist/src/cli.js`; they still need Node.js on the machine.
@@ -142,23 +179,34 @@ The portable launchers call `node dist/src/cli.js`; they still need Node.js on t
 
 The npm package includes:
 
-- `dist/` — the compiled CLI, compiler, interpreter, web runtime, desktop shell, and tests
+- `dist/src/` — the compiled CLI, compiler, interpreter, linter, formatter, and web compiler
+- `dist/runtime/web-runtime.js` — the browser runtime used by `engcode build web`
 - `docs/` — getting started, grammar, guides, FAQ, and cheat sheet
 - `examples/` — terminal scripts, web apps, and the Windows 11-style notebook
 - `playground/` — the local playground page and assets
-- `editor/` — the VS Code extension source
-- `scripts/` — install and release helpers
-- `README.md` and `package.json`
+- `README.md`, `LICENSE`, and `package.json`
+
+Not included: tests, source maps, the VS Code extension (see [Editor support](#editor-support)), and the release helpers in `scripts/`.
 
 The `engcode` command is `dist/src/cli.js`.
 
 ## Verify the install
 
+Anywhere on your machine:
+
 ```text
 engcode --version
+engcode new demo --type script
+engcode check demo/main.eng
+engcode run demo/main.eng
+engcode learn
+```
+
+From a checkout, the bundled examples work too:
+
+```text
 engcode check examples/hello/main.eng
 engcode run examples/hello/main.eng
-engcode learn
 ```
 
 `engcode run` reads input from the terminal. To pipe an answer:
@@ -173,11 +221,7 @@ engcode learn
 npm install -g engcode@latest
 ```
 
-Or reinstall from a newer checkout or release folder:
-
-```text
-npm install -g .
-```
+Or reinstall from a newer checkout with the pack steps from [Install from a checkout](#install-from-a-checkout) above (`npm pack`, then `npm install -g ./engcode-1.0.0.tgz`).
 
 ## Uninstall
 
@@ -203,7 +247,7 @@ npm link
 cd editor/vscode
 npm install -g @vscode/vsce
 vsce package
-code --install-extension engcode-0.1.0.vsix
+code --install-extension engcode-1.0.0.vsix
 ```
 
 On Windows, the extension runs `engcode.cmd` by default. If the CLI is only in this repository, set `engcode.executable` to the full command or install the package globally.
@@ -223,6 +267,5 @@ Be clear about what is not finished:
 - **No Node-free standalone binary yet.** The package and portable folder require Node.js 20 or newer. A single-file binary needs a separate toolchain (for example Node SEA or a bundler with a runtime) and is future work.
 - **No signed installers yet.** Code signing, notarization, `.exe`/`.pkg` installers, and a GUI installer require platform certificates and credentials. They are publishing steps layered on top of the release artifacts, not features of the language.
 - **Electron is not bundled.** `engcode app` and the generated desktop projects need Electron installed once (`npm install --save-dev electron`). `build windows` and `build mac` still produce a complete project without it.
-- **The install URLs are placeholders.** Replace `<your-release-host>` with the real release host when you publish. The scripts themselves are ready for a published npm package and for local `--from` installs.
 
 See [security.md](security.md) for the capability model and [cli.md](cli.md) for every command.

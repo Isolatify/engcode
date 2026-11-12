@@ -106,7 +106,8 @@ test("run explains that an app needs the web compiler", () => {
 test("version prints the version", () => {
   const result = runCli(["--version"]);
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /EngCode 0\.1\.0/);
+  const { version } = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")) as { version: string };
+  assert.match(result.stdout, new RegExp(`EngCode ${version.replace(/\./g, "\\.")}`));
 });
 
 test("unknown commands print help", () => {

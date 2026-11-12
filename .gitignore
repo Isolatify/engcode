@@ -2,4 +2,8 @@ node_modules/
 release/
 .engcode/
 *.tgz
+*.vsix
+dist/
+dist-examples/
+*.log
 .DS_Store

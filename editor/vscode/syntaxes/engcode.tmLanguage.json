@@ -3,21 +3,20 @@
   "name": "EngCode",
   "scopeName": "source.engcode",
   "patterns": [
-    { "include": "#comment" },
     { "include": "#string" },
+    { "include": "#comment" },
+    { "include": "#block-header" },
     { "include": "#hex" },
     { "include": "#number" },
     { "include": "#property" },
-    { "include": "#block-header" },
-    { "include": "#keyword" },
-    { "include": "#boolean" },
-    { "include": "#builtin" }
+    { "include": "#statements" },
+    { "include": "#events" },
+    { "include": "#phrases" },
+    { "include": "#builtins" },
+    { "include": "#style" },
+    { "include": "#attributes" }
   ],
   "repository": {
-    "comment": {
-      "match": "\\bnote\\s*:.*$",
-      "name": "comment.line.note.engcode"
-    },
     "string": {
       "begin": "\"",
       "end": "\"",
@@ -29,49 +28,131 @@
         }
       ]
     },
+    "comment": {
+      "match": "(?i)\\bnote[ \\t]*:.*$",
+      "name": "comment.line.note.engcode"
+    },
+    "block-header": {
+      "name": "entity.name.function.block.engcode",
+      "begin": "(?i)^([ \\t]*)(?!note[ \\t]*:)(?!(?:[^\"\\r\\n]|\"[^\"\\r\\n]*\")*\\bnote[ \\t]*:)(?=(?:[^\"\\r\\n]|\"[^\"\\r\\n]*\")*[ \\t]*:[ \\t]*$)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.whitespace.leading.engcode" }
+      },
+      "end": "(:)|$",
+      "endCaptures": {
+        "1": { "name": "punctuation.section.block.begin.engcode" }
+      },
+      "patterns": [
+        { "include": "#string" },
+        { "include": "#comment" },
+        { "include": "#hex" },
+        { "include": "#number" },
+        { "include": "#property" },
+        { "include": "#events" },
+        { "include": "#phrases" },
+        { "include": "#builtins" },
+        { "include": "#statements-any" },
+        { "include": "#style" },
+        { "include": "#attributes" }
+      ]
+    },
     "hex": {
       "match": "#[0-9A-Fa-f]{6}\\b|#[0-9A-Fa-f]{3}\\b",
       "name": "constant.other.color.engcode"
     },
     "number": {
-      "match": "\\b-?\\d+(?:\\.\\d+)?\\b",
+      "match": "(?<![\\w.])-?\\d+(?:\\.\\d+)?",
       "name": "constant.numeric.engcode"
     },
     "property": {
-      "match": "'[sS]\\b",
+      "match": "(?i)(?<=\\w)'s\\b",
       "name": "punctuation.accessor.engcode"
     },
-    "block-header": {
-      "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_ ]*?)(:)\\s*$",
+    "statements": {
+      "patterns": [
+        { "include": "#statement-control" },
+        { "include": "#statement-element" }
+      ]
+    },
+    "statements-any": {
+      "patterns": [
+        { "include": "#statement-control-any" },
+        { "include": "#statement-element-any" }
+      ]
+    },
+    "statement-control": {
+      "match": "(?i)^[ \\t]*(say|ask|set|change|add|remove|if|otherwise|repeat|for(?![ \\t]+each)|count|while|stop(?![ \\t]+the)|skip(?![ \\t]+to)|define|give(?![ \\t]+back)|try|use|keep(?![ \\t]+track)|call|sort|reverse|shuffle|read(?![ \\t]+file)|write|append|delete(?![ \\t]+file)|wait|save|load|get(?![ \\t]+data)|send(?![ \\t]+data)|when|every|show|hide|clear|go(?![ \\t]+to)|open(?![ \\t]+popup)|close(?![ \\t]+popup)|play(?![ \\t]+sound)|draw|end)\\b",
       "captures": {
-        "1": { "name": "punctuation.whitespace.leading.engcode" },
-        "2": { "name": "entity.name.function.block.engcode" },
-        "3": { "name": "punctuation.section.block.begin.engcode" }
+        "1": { "name": "keyword.control.engcode" }
       }
     },
-    "keyword": {
+    "statement-element": {
+      "match": "(?i)^[ \\t]*(navigation bar|text area|radio choice|tabs|tab|table|text(?![ \\t]+color)|heading|paragraph|button|input|checkbox|dropdown|slider|switch|image|video|audio|list(?![ \\t]+files)|link|icon|divider|canvas|section|card|row|column|grid|menu|footer|form|popup|app|page|style|theme)\\b",
+      "captures": {
+        "1": { "name": "keyword.other.engcode" }
+      }
+    },
+    "statement-control-any": {
+      "match": "(?i)\\b(say|ask|set|change|add|remove|if|otherwise|repeat|for(?![ \\t]+each)|count|while|stop(?![ \\t]+the)|skip(?![ \\t]+to)|define|give(?![ \\t]+back)|try|use|keep(?![ \\t]+track)|call|sort|reverse|shuffle|read(?![ \\t]+file)|write|append|delete(?![ \\t]+file)|wait|save|load|get(?![ \\t]+data)|send(?![ \\t]+data)|when|every|show|hide|clear|go(?![ \\t]+to)|open(?![ \\t]+popup)|close(?![ \\t]+popup)|play(?![ \\t]+sound)|draw|end)\\b",
+      "captures": {
+        "1": { "name": "keyword.control.engcode" }
+      }
+    },
+    "statement-element-any": {
+      "match": "(?i)\\b(navigation bar|text area|radio choice|tabs|tab|table|text(?![ \\t]+color)|heading|paragraph|button|input|checkbox|dropdown|slider|switch|image|video|audio|list(?![ \\t]+files)|link|icon|divider|canvas|section|card|row|column|grid|menu|footer|form|popup|app|page|style|theme)\\b",
+      "captures": {
+        "1": { "name": "keyword.other.engcode" }
+      }
+    },
+    "events": {
+      "match": "(?i)\\b(the user presses key|the user types in|the window is resized|the mouse enters|the mouse leaves|the page opens|page opens|is submitted|is clicked|is hovered|is checked|changes)\\b",
+      "name": "keyword.control.event.engcode"
+    },
+    "phrases": {
       "patterns": [
-        {
-          "match": "\\b(?:say|ask|set|change|add|remove|if|otherwise|repeat|for|each|count|from|to|while|stop|skip|define|give|back|try|if it fails|use|keep|track|of|as|state|display|show|hide|clear|call|sort|reverse|shuffle|wait|save|load|delete|read|write|append|list|files|get|send|data|with|and|or|is|not|at least|at most|greater than|less than|between|contains|starts with|ends with|empty|in|go|page|popup|play|draw|it|has|can|end|kind|thing|called|default|that|does|gives|the|from|by|level|showing)\\b",
-          "name": "keyword.control.engcode"
-        },
-        {
-          "match": "\\b(?:app|style|everything|theme|dark|mode|when|every|frame|second|seconds|minute|minutes)\\b",
-          "name": "keyword.other.engcode"
-        }
+        { "include": "#phrase-control" },
+        { "include": "#phrase-value" },
+        { "include": "#comparison" },
+        { "include": "#arithmetic" },
+        { "include": "#delimiter" },
+        { "include": "#literal" }
       ]
     },
-    "boolean": {
-      "match": "\\b(?:yes|no|nothing|true|false)\\b",
+    "phrase-control": {
+      "match": "(?i)\\b(a function that gives back|a function that does|a kind of thing called|ask for a number|skip to the next one|keep track of|stop the loop|that gives back|otherwise if|count from|for each|give back|if it fails|read file|list files|delete file|get data|send data|go to page|open popup|close popup|play sound|when mouse is over|in dark mode|on small screens|on big screens|every frame|the page opens|the next one|the device|the function|the error|the loop|the user|the mouse|the window|otherwise|it has|it can|on phones|on tablets|when pressed|when focused|that does)\\b",
+      "name": "keyword.control.engcode"
+    },
+    "phrase-value": {
+      "match": "(?i)\\b(an empty list|an empty table|a table with|a list of|a new)\\b",
       "name": "constant.language.engcode"
     },
-    "builtin": {
-      "patterns": [
-        {
-          "match": "\\b(?:uppercase|lowercase|trim|length|round|floor|ceiling|square root|absolute value|sine|cosine|tangent|number from|random number|random decimal|random item|item|last item|minimum|maximum|power|split|join|replace|position|now|today|format|year|month|day|hour|minute|second)\\b",
-          "name": "support.function.builtin.engcode"
-        }
-      ]
+    "comparison": {
+      "match": "(?i)\\b(is not empty|is greater than|is less than|is at least|is at most|is between|is empty|is not|is|contains|starts with|ends with|not)\\b",
+      "name": "keyword.operator.comparison.engcode"
+    },
+    "arithmetic": {
+      "match": "(?i)\\b(divided by|plus|minus|times|remainder)\\b",
+      "name": "keyword.operator.arithmetic.engcode"
+    },
+    "delimiter": {
+      "match": "(?i)\\b(to|from|with|as|in|and|or|called|showing|level|default|that)\\b",
+      "name": "keyword.contextual.engcode"
+    },
+    "literal": {
+      "match": "(?i)\\b(yes|no|nothing)\\b",
+      "name": "constant.language.engcode"
+    },
+    "builtins": {
+      "match": "(?i)\\b(data from JSON|random number from|random decimal|random item of|last item of|square root of|absolute value of|uppercase of|lowercase of|number from|minimum of|maximum of|position of|format of|year of|month of|day of|hour of|minute of|second of|JSON of|text of|length of|round of|floor of|ceiling of|sine of|cosine of|tangent of|value of|power of|split|join|replace|item|now|today|pi)\\b",
+      "name": "support.function.builtin.engcode"
+    },
+    "style": {
+      "match": "(?i)\\b(animation delay|background position|background repeat|background size|background|text color|text decoration|text transform|text shadow|font size|font weight|line height|letter spacing|rounded corners|border radius|border width|border color|border style|align items|justify content|flex grow|flex shrink|grid columns|object fit|object position|z index|animation|transition|min width|max width|min height|max height|opacity|overflow|position|direction|alignment|cursor|layout|wrap|gap|shadow)\\b",
+      "name": "keyword.other.style.engcode"
+    },
+    "attributes": {
+      "match": "(?i)\\b(label|hint|starting|minimum|maximum|description|poster|choices|columns|required|submits|loops)\\b",
+      "name": "keyword.other.attribute.engcode"
     }
   }
 }
