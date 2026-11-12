@@ -1,0 +1,10 @@
+{
+  "iconDefinitions": {
+    "eng": {
+      "iconPath": "./images/icon.png"
+    }
+  },
+  "file": "eng",
+  "fileExtensions": ["eng"],
+  "id": "engcode"
+}

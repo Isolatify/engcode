@@ -4,15 +4,35 @@
     "body": ["say ${1:\"Hello, world!\"}"],
     "description": "Print one line of text."
   },
+  "Say with plus": {
+    "prefix": "concat",
+    "body": ["say ${1:\"Hello, \"} plus ${2:name}"],
+    "description": "Join text with plus."
+  },
   "Ask for input": {
     "prefix": "ask",
     "body": ["ask ${1:\"What is your name?\"} and save it as ${2:name}"],
     "description": "Ask a question and remember the answer."
   },
+  "Ask for a number": {
+    "prefix": "askn",
+    "body": ["ask for a number ${1:\"How old are you?\"} and save it as ${2:age}"],
+    "description": "Ask for a number and remember it."
+  },
+  "Note comment": {
+    "prefix": "note",
+    "body": ["note: ${1:Explanation}"],
+    "description": "Write a comment to the end of the line."
+  },
   "If block": {
     "prefix": "if",
     "body": ["if ${1:condition}:", "    $0", "end"],
     "description": "Run a block when a condition is true."
+  },
+  "Otherwise if": {
+    "prefix": "elseif",
+    "body": ["otherwise if ${1:condition}:", "    $0"],
+    "description": "Add another branch to an if block."
   },
   "Otherwise": {
     "prefix": "otherwise",
@@ -34,15 +54,170 @@
     "body": ["count from ${1:1} to ${2:10} as ${3:number}:", "    $0", "end"],
     "description": "Count through a range of numbers."
   },
+  "While loop": {
+    "prefix": "while",
+    "body": ["while ${1:condition}:", "    $0", "end"],
+    "description": "Repeat while a condition holds."
+  },
+  "Stop the loop": {
+    "prefix": "stoploop",
+    "body": ["stop the loop"],
+    "description": "Leave the nearest loop early."
+  },
+  "Skip to the next one": {
+    "prefix": "skipnext",
+    "body": ["skip to the next one"],
+    "description": "Skip the rest of this loop turn."
+  },
   "Define function": {
     "prefix": "define",
     "body": ["define ${1:name} with ${2:value}:", "    give back ${3:value}", "end"],
     "description": "Define a reusable function."
   },
+  "Give back": {
+    "prefix": "giveback",
+    "body": ["give back ${1:value}"],
+    "description": "Return a value from a function."
+  },
+  "Call function": {
+    "prefix": "call",
+    "body": ["call ${1:greet} with ${2:\"Ada\"}"],
+    "description": "Call a function with arguments."
+  },
+  "Anonymous function": {
+    "prefix": "anonfn",
+    "body": ["set ${1:double} to a function with ${2:x} that gives back ${3:x times 2}"],
+    "description": "Create a function that gives back a value."
+  },
   "Try and fail": {
     "prefix": "try",
     "body": ["try:", "    $1", "if it fails:", "    say \"Caught: \" plus the error", "end"],
     "description": "Catch a runtime error."
+  },
+  "Use import": {
+    "prefix": "use",
+    "body": ["use \"${1:other.eng}\""],
+    "description": "Import another EngCode file."
+  },
+  "Use theme": {
+    "prefix": "usetheme",
+    "body": ["use theme \"${1:dark}\""],
+    "description": "Set the starting UI theme."
+  },
+  "Read file": {
+    "prefix": "readfile",
+    "body": ["read file \"${1:notes.txt}\" and save it as ${2:notes}"],
+    "description": "Read a file into a name."
+  },
+  "Write to file": {
+    "prefix": "writefile",
+    "body": ["write ${1:\"hello\"} to file \"${2:notes.txt}\""],
+    "description": "Replace a file with text."
+  },
+  "Append to file": {
+    "prefix": "appendfile",
+    "body": ["append ${1:\"another line\"} to file \"${2:notes.txt}\""],
+    "description": "Add one line to the end of a file."
+  },
+  "Delete file": {
+    "prefix": "deletefile",
+    "body": ["delete file \"${1:notes.txt}\""],
+    "description": "Delete a file."
+  },
+  "List files": {
+    "prefix": "listfiles",
+    "body": ["list files in \"${1:.}\" and save it as ${2:names}"],
+    "description": "List folder entries into a name."
+  },
+  "Get data": {
+    "prefix": "getdata",
+    "body": ["get data from \"${1:https://example.com/data.json}\" and save it as ${2:reply}"],
+    "description": "Fetch a URL into a name."
+  },
+  "Send data": {
+    "prefix": "senddata",
+    "body": ["send data ${1:\"hello\"} to \"${2:https://example.com/api}\" and save it as ${3:reply}"],
+    "description": "Send text to a URL."
+  },
+  "Save to device": {
+    "prefix": "savedevice",
+    "body": ["save ${1:value} to the device as \"${2:key}\""],
+    "description": "Remember a value between runs."
+  },
+  "Load from device": {
+    "prefix": "loaddevice",
+    "body": ["load \"${1:key}\" from the device and save it as ${2:value}"],
+    "description": "Read back a saved value."
+  },
+  "Delete from device": {
+    "prefix": "deletedevice",
+    "body": ["delete \"${1:key}\" from the device"],
+    "description": "Forget a saved value."
+  },
+  "Wait seconds": {
+    "prefix": "wait",
+    "body": ["wait ${1:2} seconds"],
+    "description": "Pause for a number of seconds."
+  },
+  "Sort list": {
+    "prefix": "sort",
+    "body": ["sort ${1:list}"],
+    "description": "Sort a list in place."
+  },
+  "Reverse list": {
+    "prefix": "reverse",
+    "body": ["reverse ${1:list}"],
+    "description": "Reverse a list in place."
+  },
+  "Shuffle list": {
+    "prefix": "shuffle",
+    "body": ["shuffle ${1:list}"],
+    "description": "Shuffle a list randomly."
+  },
+  "A list of": {
+    "prefix": "listof",
+    "body": ["set ${1:fruits} to a list of ${2:\"apple\", \"banana\", \"cherry\"}"],
+    "description": "Create a list with items."
+  },
+  "An empty list": {
+    "prefix": "emptylist",
+    "body": ["set ${1:tasks} to an empty list"],
+    "description": "Create an empty list."
+  },
+  "A table with": {
+    "prefix": "tablewith",
+    "body": ["set ${1:person} to a table with ${2:name \"Sam\"}, ${3:age 25}"],
+    "description": "Create a table with entries."
+  },
+  "An empty table": {
+    "prefix": "emptytable",
+    "body": ["set ${1:data} to an empty table"],
+    "description": "Create an empty table."
+  },
+  "Define a kind of thing": {
+    "prefix": "kind",
+    "body": ["define a kind of thing called ${1:Dog}:", "    $0", "end"],
+    "description": "Define an object kind."
+  },
+  "It has fields": {
+    "prefix": "ithas",
+    "body": ["it has ${1:name} and ${2:age}"],
+    "description": "Give a kind its fields."
+  },
+  "It can method": {
+    "prefix": "itcan",
+    "body": ["it can ${1:bark}:", "    $0", "end"],
+    "description": "Give a kind a method."
+  },
+  "A new object": {
+    "prefix": "newobj",
+    "body": ["set ${1:rex} to a new ${2:Dog} with ${3:name \"Rex\"}, ${4:age 3}"],
+    "description": "Create an object from a kind."
+  },
+  "Keep track": {
+    "prefix": "keep",
+    "body": ["keep track of ${1:name} as ${2:0}"],
+    "description": "Keep a value that refreshes the screen."
   },
   "App": {
     "prefix": "app",
@@ -54,19 +229,224 @@
     "body": ["page ${1:\"Home\"}:", "    $0", "end"],
     "description": "Add a page to an app."
   },
-  "Style": {
-    "prefix": "style",
-    "body": ["style ${1:everything}:", "    ${2:background} is ${3:#f8fafc}", "end"],
-    "description": "Style part of an app."
+  "Go to page": {
+    "prefix": "gotopage",
+    "body": ["go to page \"${1:About}\""],
+    "description": "Switch to another page."
+  },
+  "Open popup": {
+    "prefix": "openpopup",
+    "body": ["open popup \"${1:confirm}\""],
+    "description": "Open a popup by id."
+  },
+  "Close popup": {
+    "prefix": "closepopup",
+    "body": ["close popup \"${1:confirm}\""],
+    "description": "Close a popup by id."
+  },
+  "Popup block": {
+    "prefix": "popupblock",
+    "body": ["popup called \"${1:confirm}\":", "    $0", "end"],
+    "description": "Add a popup container."
+  },
+  "Play sound": {
+    "prefix": "playsound",
+    "body": ["play sound \"${1:ding.mp3}\""],
+    "description": "Play a sound file."
   },
   "When clicked": {
     "prefix": "when",
     "body": ["when ${1:\"button\"} is clicked:", "    $0", "end"],
     "description": "Run steps when an element is clicked."
   },
-  "Keep track": {
-    "prefix": "keep",
-    "body": ["keep track of ${1:name} as ${2:0}"],
-    "description": "Keep a value that refreshes the screen."
+  "When value changes": {
+    "prefix": "whenchange",
+    "body": ["when ${1:\"input\"} changes:", "    $0", "end"],
+    "description": "Run steps when a value changes."
+  },
+  "When submitted": {
+    "prefix": "whensubmit",
+    "body": ["when ${1:\"form\"} is submitted:", "    $0", "end"],
+    "description": "Run steps when a form is submitted."
+  },
+  "When the page opens": {
+    "prefix": "whenpage",
+    "body": ["when the page opens:", "    $0", "end"],
+    "description": "Run steps when the page loads."
+  },
+  "Every frame": {
+    "prefix": "everyframe",
+    "body": ["every frame:", "    $0", "end"],
+    "description": "Run steps on every animation frame."
+  },
+  "Every N seconds": {
+    "prefix": "everysecs",
+    "body": ["every ${1:2} seconds:", "    $0", "end"],
+    "description": "Run steps on a timer."
+  },
+  "Show element": {
+    "prefix": "show",
+    "body": ["show \"${1:details}\""],
+    "description": "Show a hidden element."
+  },
+  "Hide element": {
+    "prefix": "hide",
+    "body": ["hide \"${1:details}\""],
+    "description": "Hide an element."
+  },
+  "Clear element": {
+    "prefix": "clear",
+    "body": ["clear \"${1:search}\""],
+    "description": "Clear an input or list."
+  },
+  "Change text of element": {
+    "prefix": "changetext",
+    "body": ["change text of \"${1:message}\" to \"${2:Saved}\""],
+    "description": "Change an element's text."
+  },
+  "Draw rectangle": {
+    "prefix": "drawrect",
+    "body": ["draw rectangle on \"${1:board}\" at x ${2:10} and y ${3:10} with width ${4:20} and height ${5:20} in ${6:#fff}"],
+    "description": "Draw a rectangle on a canvas."
+  },
+  "Draw circle": {
+    "prefix": "drawcircle",
+    "body": ["draw circle on \"${1:board}\" at x ${2:50} and y ${3:50} with size ${4:8} in ${5:#fff}"],
+    "description": "Draw a circle on a canvas."
+  },
+  "Draw text": {
+    "prefix": "drawtext",
+    "body": ["draw text ${1:\"Score\"} on \"${2:board}\" at x ${3:12} and y ${4:24} in ${5:white}"],
+    "description": "Draw text on a canvas."
+  },
+  "Section": {
+    "prefix": "section",
+    "body": ["section called \"${1:projects}\":", "    $0", "end"],
+    "description": "Add a section container."
+  },
+  "Row": {
+    "prefix": "row",
+    "body": ["row:", "    $0", "end"],
+    "description": "Lay elements out in a row."
+  },
+  "Column": {
+    "prefix": "column",
+    "body": ["column:", "    $0", "end"],
+    "description": "Lay elements out in a column."
+  },
+  "Card": {
+    "prefix": "card",
+    "body": ["card called \"${1:card}\":", "    $0", "end"],
+    "description": "Add a card container."
+  },
+  "Navigation bar": {
+    "prefix": "navbar",
+    "body": ["navigation bar called \"${1:main}\":", "    $0", "end"],
+    "description": "Add a navigation bar."
+  },
+  "Menu": {
+    "prefix": "menu",
+    "body": ["menu:", "    $0", "end"],
+    "description": "Add a menu container."
+  },
+  "Footer": {
+    "prefix": "footer",
+    "body": ["footer:", "    $0", "end"],
+    "description": "Add a footer container."
+  },
+  "Form": {
+    "prefix": "form",
+    "body": ["form called \"${1:search}\":", "    $0", "end"],
+    "description": "Add a form container."
+  },
+  "Tabs": {
+    "prefix": "tabs",
+    "body": ["tabs:", "    tab \"${1:First}\":", "        $0", "    end", "end"],
+    "description": "Add a tabbed container."
+  },
+  "Heading": {
+    "prefix": "heading",
+    "body": ["heading \"${1:Title}\" level ${2:1}"],
+    "description": "Add a heading."
+  },
+  "Paragraph": {
+    "prefix": "paragraph",
+    "body": ["paragraph \"${1:Text}\""],
+    "description": "Add a paragraph."
+  },
+  "Button": {
+    "prefix": "button",
+    "body": ["button \"${1:Save}\" called \"${2:save}\""],
+    "description": "Add a button."
+  },
+  "Input": {
+    "prefix": "input",
+    "body": ["input called \"${1:name}\" with label \"${2:Your name}\""],
+    "description": "Add a text input."
+  },
+  "Checkbox": {
+    "prefix": "checkbox",
+    "body": ["checkbox \"${1:Done}\" called \"${2:done}\""],
+    "description": "Add a checkbox."
+  },
+  "Dropdown": {
+    "prefix": "dropdown",
+    "body": ["dropdown called \"${1:size}\" with choices \"${2:S}\", \"${3:M}\", \"${4:L}\""],
+    "description": "Add a dropdown with choices."
+  },
+  "Slider": {
+    "prefix": "slider",
+    "body": ["slider called \"${1:volume}\" with minimum ${2:0} and maximum ${3:100} and starting ${4:50}"],
+    "description": "Add a number slider."
+  },
+  "Switch": {
+    "prefix": "switch",
+    "body": ["switch \"${1:Notifications}\" called \"${2:notifications}\""],
+    "description": "Add an on/off switch."
+  },
+  "Image": {
+    "prefix": "image",
+    "body": ["image \"${1:photo.png}\" with description \"${2:A photo}\""],
+    "description": "Add an image with alt text."
+  },
+  "Link": {
+    "prefix": "link",
+    "body": ["link \"${1:Docs}\" to \"${2:https://example.com}\""],
+    "description": "Add a link."
+  },
+  "Divider": {
+    "prefix": "divider",
+    "body": ["divider"],
+    "description": "Add a divider line."
+  },
+  "Canvas": {
+    "prefix": "canvas",
+    "body": ["canvas called \"${1:board}\" with width ${2:640} and height ${3:360}"],
+    "description": "Add a drawing canvas."
+  },
+  "List showing": {
+    "prefix": "listshow",
+    "body": ["list called \"${1:tasks}\" showing ${2:tasks}"],
+    "description": "Add a list that shows a list value."
+  },
+  "Table with columns": {
+    "prefix": "tablecols",
+    "body": ["table called \"${1:scores}\" with columns \"${2:name}\", \"${3:score}\""],
+    "description": "Add a table with columns."
+  },
+  "Style": {
+    "prefix": "style",
+    "body": ["style ${1:everything}:", "    ${2:background} is ${3:#f8fafc}", "end"],
+    "description": "Style part of an app."
+  },
+  "Style with hover state": {
+    "prefix": "stylehover",
+    "body": ["style \"${1:save button}\":", "    ${2:background} is ${3:#2563eb}", "    when mouse is over:", "        ${4:background} is ${5:#1d4ed8}", "    end", "end"],
+    "description": "Style an element with a hover state."
+  },
+  "Theme block": {
+    "prefix": "theme",
+    "body": ["theme \"${1:Day}\":", "    ${2:accent} is ${3:#2563eb}", "    background is ${4:#f8fafc}", "end"],
+    "description": "Define named theme colors."
   }
 }

@@ -24,7 +24,7 @@ node dist/src/cli.js run examples/hello/main.eng
 If you want the shorter `engcode` command everywhere, install the package:
 
 ```text
-npm install -g .
+npm install -g engcode
 engcode run examples/hello/main.eng
 ```
 
@@ -885,7 +885,7 @@ npm start
 
 ## 22. Troubleshooting
 
-**`engcode` is not recognised.** Use `node dist/src/cli.js ...`, or install with `npm install -g .`.
+**`engcode` is not recognised.** Use `node dist/src/cli.js ...`, or install with `npm install -g engcode`.
 
 **PowerShell blocks `npm`.** Use `npm.cmd run build`.
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 # EngCode installer for macOS and Linux.
 #
-# Published release:
-#   curl -fsSL https://engcode.example/install.sh | sh
+# Published npm package (recommended):
+#   npm install -g engcode
 #
 # From a checkout or a release folder:
 #   sh scripts/install.sh --from .
-#   sh scripts/install.sh --from ./release/engcode-0.1.0.tgz
+#   sh scripts/install.sh --from ./release/engcode-1.0.0.tgz
 set -eu
 
 VERSION=""
@@ -49,6 +49,35 @@ if [ "$NODE_MAJOR" -lt 20 ]; then
 fi
 
 if [ -n "$FROM" ]; then
+  if [ -d "$FROM" ]; then
+    if [ -f "$FROM/package.json" ]; then
+      # A checkout: pack it first so sources, tests, and node_modules are not copied.
+      cyan "Packing EngCode from $FROM"
+      PACK_DIR="$(mktemp -d)"
+      trap 'rm -rf "$PACK_DIR"' EXIT
+      if (cd "$FROM" && npm pack --pack-destination "$PACK_DIR") >"$PACK_DIR/pack.log" 2>&1; then
+        PACKED="$(grep -E '^engcode-.*\.tgz$' "$PACK_DIR/pack.log" | tail -n 1)"
+      else
+        cat "$PACK_DIR/pack.log"
+        echo "npm pack did not finish. Run 'npm install' in the checkout first."
+        exit 1
+      fi
+      if [ -z "$PACKED" ]; then
+        cat "$PACK_DIR/pack.log"
+        echo "npm pack did not produce a tarball."
+        exit 1
+      fi
+      FROM="$PACK_DIR/$PACKED"
+    else
+      # A release folder: use the packed tarball inside it.
+      TGZ="$(find "$FROM" -maxdepth 1 -name 'engcode-*.tgz' -type f | sort | tail -n 1)"
+      if [ -z "$TGZ" ]; then
+        echo "I could not find engcode-*.tgz or package.json in $FROM."
+        exit 1
+      fi
+      FROM="$TGZ"
+    fi
+  fi
   cyan "Installing EngCode from $FROM"
   if [ -n "$PREFIX" ]; then
     npm install -g --prefix "$PREFIX" "$FROM"
@@ -72,7 +101,28 @@ else
 fi
 
 cyan "Checking the command"
-engcode --version
+if [ -n "$PREFIX" ]; then
+  # Unix npm puts launchers in PREFIX/bin; Windows npm puts them in PREFIX itself.
+  if [ -x "$PREFIX/bin/engcode" ]; then
+    "$PREFIX/bin/engcode" --version
+    LAUNCHER_DIR="$PREFIX/bin"
+  elif [ -f "$PREFIX/engcode" ]; then
+    sh "$PREFIX/engcode" --version
+    LAUNCHER_DIR="$PREFIX"
+  else
+    echo "The install finished, but no engcode launcher was found under $PREFIX."
+    exit 1
+  fi
+  echo
+  echo "Add $LAUNCHER_DIR to your PATH to run 'engcode' anywhere."
+else
+  if ! command -v engcode >/dev/null 2>&1; then
+    echo "The install finished, but 'engcode' is not on PATH yet."
+    echo "Open a new terminal, or add npm's global bin folder to PATH."
+    exit 1
+  fi
+  engcode --version
+fi
 echo
 echo "EngCode is ready."
 echo "Try:"

@@ -1,0 +1,11 @@
+# Packaged from dist/ only — everything else is build-time material.
+.vscode/**
+src/**
+tests/**
+node_modules/**
+dist/**/*.map
+build.mjs
+tsconfig.json
+package-lock.json
+.gitignore
+**/*.ts

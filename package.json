@@ -1,43 +1,62 @@
 {
   "name": "engcode",
-  "version": "0.1.0",
-  "description": "Build with Simple English",
+  "version": "1.0.0",
+  "description": "Build with Simple English — a beginner-friendly programming language for scripts, websites, and desktop apps",
   "type": "module",
   "bin": {
     "engcode": "dist/src/cli.js"
   },
   "files": [
-    "dist",
+    "dist/src",
+    "dist/runtime/web-runtime.js",
+    "!**/*.map",
     "docs",
     "examples",
+    "!examples/**/.engcode",
     "playground",
-    "editor",
-    "scripts",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/tests/",
-    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=80 --test-coverage-functions=90 --test-coverage-exclude=\"dist/src/cli.js\" --test-coverage-exclude=\"dist/src/playground.js\" dist/tests/",
+    "test": "npm run build && node --test \"dist/tests/*.test.js\"",
+    "test:coverage": "npm run build && node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=80 --test-coverage-functions=90 --test-coverage-exclude=\"dist/src/cli.js\" --test-coverage-exclude=\"dist/src/playground.js\" \"dist/tests/*.test.js\"",
     "check:docs": "node scripts/check-doc-links.mjs",
+    "check:package": "node scripts/check-package.mjs",
     "package:release": "node scripts/package-release.mjs",
+    "prepack": "npm run build",
+    "prepublishOnly": "npm test && npm run check:docs && npm run check:package",
     "engcode": "node dist/src/cli.js"
   },
   "engines": {
     "node": ">=20"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Isolatify/engcode.git"
+  },
+  "homepage": "https://github.com/Isolatify/engcode#readme",
+  "bugs": {
+    "url": "https://github.com/Isolatify/engcode/issues"
+  },
   "keywords": [
-    "language",
-    "compiler",
+    "engcode",
+    "simple english",
+    "programming language",
     "beginner",
-    "english",
-    "education"
+    "education",
+    "compiler",
+    "linter",
+    "formatter",
+    "cli",
+    "web",
+    "desktop"
   ],
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "electron": "^45.3.0",
     "happy-dom": "^21.0.4",
     "typescript": "^5.7.2"
   }

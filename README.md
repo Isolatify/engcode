@@ -40,21 +40,86 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 
 Desktop builds need Electron, which is installed on demand. The generated project includes the app, a locked-down Electron window, a launcher, and a `npm run package` script for a release folder. Code signing and notarization are separate publishing steps. The current release also needs Node.js 20 or newer; a Node-free standalone binary is not produced yet.
 
+## Install
+
+EngCode needs **Node.js 20 or newer** — install it from [nodejs.org](https://nodejs.org/) if you do not have it. The package includes the compiler, CLI, runtime, tutorial, examples, docs, and playground, and works offline after installation.
+
+### Windows (PowerShell)
+
+```text
+npm install -g engcode
+engcode --version
+```
+
+If PowerShell restricts npm scripts, call `npm.cmd` instead:
+
+```text
+npm.cmd install -g engcode
+```
+
+### macOS
+
+```sh
+npm install -g engcode
+engcode --version
+```
+
+### Linux
+
+```sh
+npm install -g engcode
+engcode --version
+```
+
+If npm reports `EACCES` (a permission error), run the command with `sudo`, or configure a prefix your own account owns:
+
+```sh
+npm config set prefix "$HOME/.npm-global"
+```
+
+Add `$HOME/.npm-global/bin` to your `PATH` and run the install again.
+
+### From a checkout
+
+```text
+npm install
+npm run build
+npm pack
+npm install -g ./engcode-1.0.0.tgz
+```
+
+`npm pack` builds the same tarball the registry serves, so tests, sources, and `node_modules` are not copied into the global install (`npm install -g .` would copy the whole folder).
+
+Then check the install and start the tutorial:
+
+```text
+engcode --version
+engcode learn
+```
+
+Update with `npm install -g engcode@latest`; remove with `npm uninstall -g engcode`. The [install guide](docs/install.md) covers the local install scripts, release packaging, editor setup, and platform notes.
+
 ## Run a file
 
-From this folder, build once and then run any example:
+With the global install, run any `.eng` file. From a checkout of this repository, the bundled examples are ready:
+
+```text
+engcode run examples/hello/main.eng
+```
+
+Or start a fresh project anywhere:
+
+```text
+engcode new my-project --type script
+engcode run my-project/main.eng
+```
+
+From this folder, build once and then run any example without installing a command:
 
 ```text
 npm install
 npm run build
 node dist/src/cli.js run examples/hello/main.eng
-```
-
-Or install the `engcode` command for your machine:
-
-```text
-npm install -g .
-engcode run examples/hello/main.eng
 ```
 
 On Windows PowerShell, use `npm.cmd` if script execution is restricted:

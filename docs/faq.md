@@ -28,7 +28,7 @@ A folder is read from `engcode.json` (its `entry` field) or from `main.eng`.
 If `engcode` is not recognised, use `node dist/src/cli.js run main.eng` from a checkout, or install the command:
 
 ```text
-npm install -g .
+npm install -g engcode
 ```
 
 On Windows PowerShell, use `npm.cmd` when script execution is restricted:
