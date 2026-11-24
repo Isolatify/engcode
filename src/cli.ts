@@ -183,6 +183,11 @@ function printHelp(): void {
       "  --explain                 explain every statement in English",
       "  --step                    pause between statements",
       "",
+      "Options for serve:",
+      "  --port 3000               choose the first port to try (also -p)",
+      "  --host                    share on your network; --host 127.0.0.1 keeps it local",
+      "  --open                    open the browser after the server starts",
+      "",
       "Options for check and lint:",
       "  --json                    machine-readable diagnostics",
       "  --strict                  treat warnings as errors",
@@ -1361,8 +1366,10 @@ async function buildCommand(args: string[]): Promise<number> {
 }
 
 async function serveCommand(args: string[]): Promise<number> {
-  const portIndex = args.indexOf("--port");
+  // Next.js-style flag parsing: --port N (also -p N), --host [addr], --open.
   let port = 3000;
+  const portAliasIndex = args.indexOf("-p");
+  const portIndex = portAliasIndex >= 0 ? portAliasIndex : args.indexOf("--port");
   if (portIndex >= 0 && args[portIndex + 1]) {
     const parsed = Number(args[portIndex + 1]);
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
@@ -1372,9 +1379,20 @@ async function serveCommand(args: string[]): Promise<number> {
     port = parsed;
   }
 
+  // --host with a value binds that address; bare --host binds all interfaces.
+  const hostIndex = args.indexOf("--host");
+  let host = "0.0.0.0";
+  if (hostIndex >= 0 && args[hostIndex + 1] && !args[hostIndex + 1]!.startsWith("-")) {
+    host = String(args[hostIndex + 1]);
+  }
+
   const filtered = args.filter((arg, index) => {
-    if (arg === "--port") return false;
-    if (index > 0 && args[index - 1] === "--port") return false;
+    if (arg === "--port" || arg === "-p" || arg === "--host" || arg === "--open") return false;
+    if (index > 0) {
+      const previous = args[index - 1];
+      if (previous === "--port" || previous === "-p") return false;
+      if (previous === "--host" && !arg.startsWith("-")) return false;
+    }
     return !arg.startsWith("--");
   });
   const entry = findEntryFile(filtered);
@@ -1502,22 +1520,37 @@ async function serveCommand(args: string[]): Promise<number> {
     });
   }
 
-  const actualPort = await listenWithFallback(server, port);
+  const actualPort = await listenWithFallback(server, port, host);
   if (actualPort === null) {
-    process.stderr.write(`I could not start a server on port ${port} or the next ${10} ports.\n`);
+    process.stderr.write(`I could not start a server on port ${port} or the next 10 ports.\n`);
     watcher.close();
     return 1;
   }
+  if (actualPort !== port) {
+    process.stdout.write(
+      `⚠ Port ${port} is in use, using available port ${actualPort} instead.\n\n`,
+    );
+  }
 
-  const address = `http://localhost:${actualPort}/`;
+  // Next.js-style startup banner.
+  const bold = "\x1b[1m";
+  const dim = "\x1b[2m";
+  const reset = "\x1b[0m";
+  const localUrl = `http://localhost:${actualPort}/`;
+  const networkIp = host === "0.0.0.0" ? localNetworkAddress() : undefined;
+  const networkUrl = networkIp ? `http://${networkIp}:${actualPort}/` : undefined;
+  const banner: string[] = [
+    `  ${bold}▲ EngCode ${VERSION}${reset} ${dim}— Build with Simple English${reset}`,
+    "",
+    `   ${bold}- Local${reset}:	${localUrl}`,
+  ];
+  if (networkUrl) banner.push(`   ${bold}- Network${reset}:	${networkUrl}`);
+  process.stdout.write(banner.join("\n") + "\n\n");
   process.stdout.write(
-    [
-      `Serving "${current.build.appName}" at ${address}`,
-      `Watching ${entry.root} for changes. Press Ctrl+C to stop.`,
-      "",
-    ].join("\n"),
+    ` ${bold}\x1b[32m✓\x1b[0m${reset} Serving "${current.build.appName}" — press Ctrl+C to stop\n\n`,
   );
-  if (args.includes("--open")) openBrowser(address);
+  process.stdout.write(`${dim}  Watching ${entry.root} for changes${reset}\n\n`);
+  if (args.includes("--open")) openBrowser(localUrl);
 
   const heartbeat = setInterval(() => {
     for (const client of clients) client.write(": keep-alive\n\n");
@@ -1528,6 +1561,7 @@ async function serveCommand(args: string[]): Promise<number> {
       clearInterval(heartbeat);
       watcher?.close();
       for (const client of clients) client.end();
+      process.stdout.write(`\n ${bold}\x1b[32m✓\x1b[0m${reset} Stopped. Goodbye.\n`);
       server.close(() => resolve(0));
       setTimeout(() => resolve(0), 500);
     };
@@ -1536,7 +1570,16 @@ async function serveCommand(args: string[]): Promise<number> {
   });
 }
 
-function listenWithFallback(server: http.Server, start: number): Promise<number | null> {
+function localNetworkAddress(): string | undefined {
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const net of list ?? []) {
+      if (net.family === "IPv4" && !net.internal) return net.address;
+    }
+  }
+  return undefined;
+}
+
+function listenWithFallback(server: http.Server, start: number, host: string): Promise<number | null> {
   return new Promise((resolve) => {
     let port = start;
     const attempts = 10;
@@ -1559,7 +1602,7 @@ function listenWithFallback(server: http.Server, start: number): Promise<number 
       };
       server.once("error", onError);
       server.once("listening", onListening);
-      server.listen(port, "127.0.0.1");
+      server.listen(port, host);
     };
 
     attempt();
