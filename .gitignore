@@ -3,6 +3,7 @@ release/
 .engcode/
 *.tgz
 *.vsix
+!editor/vscode/engcode-*.vsix
 dist/
 dist-examples/
 *.log
