@@ -9,7 +9,7 @@ set name to "Sam"
 say "Hello, " plus name
 ```
 
-No semicolons. No braces. No type declarations. Blocks start with `:` and finish with `end`.
+No semicolons. No braces. No type declarations. Blocks start with `:` and finish with `end`. `eng` is a short form of `engcode` — `eng run main.eng` works anywhere `engcode run main.eng` does.
 
 ## Status
 
@@ -34,7 +34,7 @@ No semicolons. No braces. No type declarations. Blocks start with `:` and finish
 - a local playground with `engcode playground`
 - a VS Code extension in [`editor/vscode`](editor/vscode)
 - install scripts and a release packager
-- 302 automated tests, all passing
+- 322 automated tests, all passing
 - 95.2% line, 87.8% branch, and 94.1% function coverage across the language, web compiler, desktop shell, browser runtime, and developer tools
 - a one-million-iteration loop in well under two seconds
 

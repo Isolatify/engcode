@@ -115,7 +115,26 @@ const TEMPLATES: Record<ProjectType, ProjectTemplate> = {
   desktop: {
     type: "desktop",
     description: "an Electron desktop app",
-    files: () => [{ path: "main.eng", content: DESKTOP_MAIN }],
+    files: (name) => [
+      { path: "main.eng", content: DESKTOP_MAIN },
+      {
+        path: "package.json",
+        content:
+          JSON.stringify(
+            {
+              name: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "engcode-app",
+              version: "1.0.0",
+              private: true,
+              description: `${name} made with EngCode`,
+              devDependencies: {
+                electron: "^45.3.0",
+              },
+            },
+            null,
+            2,
+          ) + "\n",
+      },
+    ],
   },
 };
 
@@ -160,13 +179,21 @@ export function projectFiles(name: string, type: ProjectType): ProjectFile[] {
         "",
         "```text",
         "engcode check main.eng",
-        type === "script" ? "engcode run main.eng" : "engcode serve .",
+        type === "script"
+          ? "engcode run main.eng"
+          : type === "desktop"
+            ? "npm install\nengcode app ."
+            : "engcode serve .",
         "```",
         "",
         "Build it with:",
         "",
         "```text",
-        type === "script" ? "engcode run main.eng" : "engcode build web . --out dist",
+        type === "script"
+          ? "engcode run main.eng"
+          : type === "desktop"
+            ? "engcode build windows ."
+            : "engcode build web . --out dist",
         "```",
         "",
         "Learn the language with `engcode learn`.",

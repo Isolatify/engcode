@@ -670,7 +670,7 @@ style everything:
 end
 ```
 
-Every theme property becomes a CSS custom property: `accent` → `--eng-accent`, `background` → `--eng-bg`, `text` → `--eng-fg`, `surface` → `--eng-surface`, `muted` → `--eng-muted`, `border` → `--eng-border`, `font` → `--eng-font`, `corner radius` → `--eng-radius`, `shadow` → `--eng-shadow`. A style value with the same name as a theme property compiles to `var(...)`. Light declarations go into `:root`; `in dark mode` declarations apply with `[data-theme="dark"]` and automatically follow the visitor's system preference. The runtime theme toggle switches between them.
+Every theme property becomes a CSS custom property: `accent` → `--eng-accent`, `background` → `--eng-bg`, `text` → `--eng-fg`, `surface` → `--eng-surface`, `muted` → `--eng-muted`, `border` → `--eng-border`, `font` → `--eng-font`, `corner radius` → `--eng-radius`, `shadow` → `--eng-shadow`. A style value with the same name as a theme property compiles to `var(...)`. Light declarations go into `:root`; `in dark mode` declarations apply with `[data-theme="dark"]` and automatically follow the visitor's system preference. When the program declares `in dark mode` styles, the runtime adds a theme toggle that switches between them; apps without dark styles get no toggle.
 
 Friendly font names are expanded to readable stacks: `system`, `modern`, `sans`, `serif`, `classic`, `mono`, `code`, `rounded`, `friendly`, `windows`, `windows display`, `display`, and `handwriting`. `windows` uses Segoe UI Variable Text and falls back to Segoe UI, so a desktop app keeps the native Windows 11 feeling while still working on other systems. Named shadows are `soft`, `medium`, `strong`, and `glow`.
 

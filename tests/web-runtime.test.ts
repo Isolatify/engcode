@@ -808,7 +808,7 @@ test("saves, loads, deletes, asks, and toggles the theme", async () => {
     pages: [page("Home", [node("text", "u7", { id: "output", label: t("Ready") })])],
   };
 
-  const { document, window } = mount(definition, {}, (window) => {
+  const { document, window } = mount(definition, { themeToggle: true }, (window) => {
     (window as Any).prompt = () => "42";
   });
   await flush();
@@ -823,6 +823,24 @@ test("saves, loads, deletes, asks, and toggles the theme", async () => {
   assert.ok(["light", "dark"].includes(document.documentElement.dataset.theme ?? ""));
   assert.ok(window.localStorage.getItem("engcode:theme"));
   window.close();
+});
+
+test("only injects the theme toggle when the app declares dark styles", async () => {
+  const definition: Any = {
+    name: "Plain",
+    body: [],
+    pages: [page("Home")],
+  };
+
+  const plain = mount(definition);
+  await flush();
+  assert.equal(plain.document.querySelector(".eng-theme-toggle"), null);
+  plain.window.close();
+
+  const themed = mount(definition, { themeToggle: true });
+  await flush();
+  assert.ok(themed.document.querySelector(".eng-theme-toggle"));
+  themed.window.close();
 });
 
 test("fetches web data, handles failures, and checks network limits", async () => {

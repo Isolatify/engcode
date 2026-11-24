@@ -1,6 +1,6 @@
 # EngCode command line
 
-The `engcode` command runs scripts, builds websites, opens desktop projects, checks code, formats it, and teaches the language. All commands work on Windows, macOS, and Linux with Node.js 20 or newer.
+The `engcode` command runs scripts, builds websites, opens desktop projects, checks code, formats it, updates itself, and teaches the language. All commands work on Windows, macOS, and Linux with Node.js 20 or newer. `eng` is a short form of `engcode` — `eng run main.eng` works anywhere `engcode run main.eng` does.
 
 ```text
 EngCode — Build with Simple English
@@ -186,6 +186,15 @@ engcode playground --port 4000 --open
 ```
 
 The playground is a local browser editor served from `playground/`. It runs terminal scripts with a 200,000-step limit, shows friendly diagnostics, and previews apps in a sandboxed iframe using the same runtime as a web build. It is intentionally local: code is not sent to a third-party service.
+
+## Keeping EngCode current
+
+```text
+engcode update
+engcode uninstall
+```
+
+`update` asks npm for the newest version and installs it when there is one; otherwise it says so. `uninstall` removes the `~/.engcode` data folder (lesson progress, saved app data, caches) and prints the one npm command that removes the launcher itself.
 
 ## Exit codes
 

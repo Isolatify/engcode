@@ -211,6 +211,7 @@ test("turns themes into light and dark CSS variables", () => {
     [],
   );
   const build = compileWeb(analysis.program!, { root: process.cwd() });
+  assert.match(build.js, /themeToggle: true/);
   assert.match(build.css, /:root \{\n  --eng-accent: #2563eb;/);
   assert.match(build.css, /--eng-bg: #f8fafc;/);
   assert.match(build.css, /--eng-font: "Inter", "Segoe UI"/);
@@ -222,6 +223,28 @@ test("turns themes into light and dark CSS variables", () => {
   assert.match(build.css, /border-radius: 8px/);
   assert.match(build.css, /transition: all 0\.3s ease/);
   assert.match(build.css, /animation: eng-fade-in 0\.8s ease both/);
+});
+
+test("skips the theme toggle when the program has no dark styles", () => {
+  const source = [
+    'app "Plain":',
+    '    page "Home":',
+    '        heading "Hello"',
+    "    end",
+    "end",
+    "",
+    'theme "Day":',
+    "    accent is #2563eb",
+    "end",
+    "",
+  ].join("\n");
+  const analysis = analyze("plain.eng", source, { root: process.cwd(), allowApps: true });
+  assert.deepEqual(
+    analysis.diagnostics.filter((diagnostic) => diagnostic.severity !== "warning"),
+    [],
+  );
+  const build = compileWeb(analysis.program!, { root: process.cwd() });
+  assert.match(build.js, /themeToggle: false/);
 });
 
 test("adds accessible attributes to images, videos, and audio", () => {

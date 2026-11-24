@@ -65,6 +65,37 @@ test("the grammar and language configuration are valid JSON", () => {
   assert.match(language.indentationRules.decreaseIndentPattern, /end/);
 });
 
+test("the file icon theme maps .eng to the EngCode icon", () => {
+  const theme = readJson("engcode-icon-theme.json") as {
+    id: string;
+    name: string;
+    iconDefinitions: Record<string, { iconPath: string }>;
+    fileExtensions: Record<string, string>;
+    file?: string;
+  };
+  assert.equal(theme.id, "engcode");
+  assert.ok(theme.name);
+  // fileExtensions must be an object map of extension -> icon id. An array
+  // here silently disables the theme, which is how .eng lost its icon.
+  assert.ok(theme.fileExtensions && !Array.isArray(theme.fileExtensions));
+  assert.equal(theme.fileExtensions.eng, "eng");
+  // No default "file" icon: every non-.eng file must keep its normal icon.
+  assert.equal(theme.file, undefined);
+  const icon = theme.iconDefinitions.eng;
+  assert.ok(icon, "missing eng icon definition");
+  assert.ok(
+    fs.existsSync(path.join(root, icon.iconPath)),
+    `icon file not found: ${icon.iconPath}`,
+  );
+  // The manifest must actually contribute this theme.
+  const manifest = readJson("package.json") as {
+    contributes: { iconThemes: Array<{ id: string; path: string }> };
+  };
+  const contributed = manifest.contributes.iconThemes.find((entry) => entry.id === "engcode");
+  assert.ok(contributed, "manifest does not contribute the engcode icon theme");
+  assert.equal(contributed.path, "./engcode-icon-theme.json");
+});
+
 test("snippets cover the main language forms", () => {
   const snippets = readJson("snippets/engcode.json") as Record<string, { prefix: string; body: string[] }>;
   const prefixes = Object.values(snippets).map((snippet) => snippet.prefix);

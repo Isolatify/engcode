@@ -4,7 +4,8 @@
   "description": "Build with Simple English — a beginner-friendly programming language for scripts, websites, and desktop apps",
   "type": "module",
   "bin": {
-    "engcode": "dist/src/cli.js"
+    "engcode": "dist/src/cli.js",
+    "eng": "dist/src/cli.js"
   },
   "files": [
     "dist/src",

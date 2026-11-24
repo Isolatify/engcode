@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import * as fs from "node:fs";
 import * as http from "node:http";
+import * as os from "node:os";
 import * as path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { RuntimeError, renderDiagnostic, type Diagnostic } from "./diagnostics.js";
 import { Interpreter, type InputSource, type TraceStep } from "./interpreter.js";
@@ -99,6 +100,16 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "update") {
+    process.exitCode = await updateCommand();
+    return;
+  }
+
+  if (command === "uninstall") {
+    process.exitCode = uninstallCommand();
+    return;
+  }
+
   switch (command) {
     case "run":
       process.exitCode = runCommand(argv.slice(1));
@@ -160,8 +171,12 @@ function printHelp(): void {
       "  engcode learn             the 20-lesson tutorial",
       "  engcode playground        open a local code playground",
       "  engcode repl              type English and run it right away",
+      "  engcode update            check for and install a newer version",
+      "  engcode uninstall         remove EngCode from this machine",
       "  engcode help              show this help",
       "  engcode version           show the version",
+      "",
+      "  eng is a short form of engcode — eng run main.eng works too.",
       "",
       "Options for run:",
       "  --allow-network           allow https requests in this run",
@@ -217,6 +232,80 @@ class StepQuit extends Error {
   constructor() {
     super("Stopped by the learner.");
   }
+}
+
+/** Compare two dotted versions: negative if a < b. */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+async function updateCommand(): Promise<number> {
+  process.stdout.write("Checking for a newer version of EngCode…\n");
+  const view = process.platform === "win32"
+    ? spawnSync("npm view engcode version", { encoding: "utf8", timeout: 30_000, shell: true })
+    : spawnSync("npm", ["view", "engcode", "version"], { encoding: "utf8", timeout: 30_000 });
+  if (view.error || view.status !== 0) {
+    process.stderr.write(
+      "I could not reach npm to check for updates. Are you online?\n" +
+        `You can always check by hand: npm view engcode version\n`,
+    );
+    return 1;
+  }
+  const latest = String(view.stdout.trim().split("\n").at(-1) ?? "").replace(/^[\"']|[\"']$/g, "").trim();
+  if (!/^\d+\.\d+\.\d+$/.test(latest)) {
+    process.stderr.write(`npm gave me an answer I could not read: "${latest}".\n`);
+    return 1;
+  }
+  if (compareVersions(VERSION, latest) >= 0) {
+    process.stdout.write(`EngCode ${VERSION} is already the newest version.\n`);
+    return 0;
+  }
+  process.stdout.write(`Updating EngCode ${VERSION} → ${latest}…\n`);
+  const install = process.platform === "win32"
+    ? spawnSync(`npm install -g engcode@${latest}`, { stdio: "inherit", timeout: 120_000, shell: true })
+    : spawnSync("npm", ["install", "-g", `engcode@${latest}`], { stdio: "inherit", timeout: 120_000 });
+  if (install.error || (install.status !== 0 && install.status !== null)) {
+    process.stderr.write(
+      "The update did not finish. Try it by hand:\n" +
+        `  npm install -g engcode@latest\n`,
+    );
+    return 1;
+  }
+  process.stdout.write(`Updated to EngCode ${latest}.\n`);
+  return 0;
+}
+
+function uninstallCommand(): number {
+  const dataDir = path.join(os.homedir(), ".engcode");
+  let removedAnything = false;
+  try {
+    if (fs.existsSync(dataDir)) {
+      fs.rmSync(dataDir, { recursive: true, force: true });
+      removedAnything = true;
+    }
+  } catch (error) {
+    process.stderr.write(
+      `I could not remove ${dataDir}: ${error instanceof Error ? error.message : String(error)}\n` +
+        "Remove it by hand if it still exists.\n",
+    );
+    return 1;
+  }
+  process.stdout.write(
+    removedAnything
+      ? `Removed ${dataDir} — lesson progress, saved app data and caches.\n`
+      : "There is no EngCode data folder on this machine.\n",
+  );
+  process.stdout.write(
+    "\nTo finish uninstalling, let npm remove the command itself:\n" +
+      "  npm uninstall -g engcode\n",
+  );
+  return 0;
 }
 
 function runCommand(args: string[]): number {
@@ -660,6 +749,7 @@ function newCommand(args: string[]): number {
       "",
       "Next:",
       `  cd ${quotePath(target)}`,
+      ...(kind === "desktop" ? ["  npm install"] : []),
       "  engcode check main.eng",
       kind === "script" ? "  engcode run main.eng" : "  engcode serve .",
       kind === "desktop" ? "  engcode app ." : "",
@@ -1521,22 +1611,121 @@ function openBrowser(url: string): void {
 
 const LIVE_RELOAD_CLIENT = `const events = new EventSource("/__engcode/events");
 let overlay = null;
-const show = (message) => {
+
+/* Build-error overlay — Next.js dev-overlay inspired: a light-mode neutral
+   panel with a dark error header, mono code area, and dismiss button. */
+const show = (messages) => {
   if (!overlay) {
     overlay = document.createElement("div");
-    overlay.setAttribute("role", "alert");
-    overlay.style.cssText = "position:fixed;inset:16px;z-index:9999;overflow:auto;background:#7f1d1d;color:#fff;padding:24px;border-radius:12px;font:15px/1.5 ui-monospace,monospace;white-space:pre-wrap";
+    overlay.id = "engcode-error-overlay";
     document.body.append(overlay);
   }
-  overlay.textContent = message;
+  overlay.innerHTML = "";
+  const sheet = document.createElement("style");
+  sheet.id = "engcode-error-overlay-style";
+  sheet.textContent = [
+    "#engcode-error-overlay{position:fixed;left:16px;right:16px;top:16px;z-index:2147483647;max-height:calc(100vh - 32px);overflow:auto;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.35);font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;text-align:left}",
+    "#engcode-error-overlay .hdr{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px 12px 0 0;background:#1f1f1f;color:#fff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}",
+    "#engcode-error-overlay .badge{background:#d32f2f;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:600;letter-spacing:.02em}",
+    "#engcode-error-overlay .hdr-title{font-size:14px;font-weight:600}",
+    "#engcode-error-overlay .hdr-note{margin-left:auto;color:#9ca3af;font-size:12px}",
+    "#engcode-error-overlay .close{all:unset;cursor:pointer;color:#9ca3af;font-size:16px;line-height:1;padding:4px}",
+    "#engcode-error-overlay .close:hover{color:#fff}",
+    "#engcode-error-overlay .body{background:#fafafa;color:#171717;padding:16px 18px;border:1px solid #e5e5e5;border-top:0;border-radius:0 0 12px 12px}",
+    "#engcode-error-overlay .err{margin:0 0 14px}",
+    "#engcode-error-overlay .err-msg{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-weight:600;font-size:14px;color:#171717}",
+    "#engcode-error-overlay .err-hint{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:13px;color:#6b7280;margin-top:2px}",
+    "#engcode-error-overlay .frame{border-radius:8px;background:#1f1f1f;color:#e5e5e5;padding:10px 0;overflow-x:auto;font-size:13px;line-height:1.6}",
+    "#engcode-error-overlay .frame .ln{color:#8b8b8b;display:inline-block;min-width:3.2ch;text-align:right;padding-right:12px;user-select:none}",
+    "#engcode-error-overlay .frame .src{color:#e5e5e5}",
+    "#engcode-error-overlay .frame .src .mark{color:#ef4444;text-decoration:underline;text-decoration-style:wavy;text-underline-offset:3px}",
+    "#engcode-error-overlay .foot{padding:10px 18px;border-radius:0 0 12px 12px;background:#1f1f1f;color:#9ca3af;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:12px}",
+  ].join("\\n");
+  overlay.append(sheet);
+
+  const hdr = document.createElement("div");
+  hdr.className = "hdr";
+  const badge = document.createElement("span");
+  badge.className = "badge";
+  badge.textContent = "Build error";
+  const title = document.createElement("span");
+  title.className = "hdr-title";
+  title.textContent = "The program did not compile";
+  const note = document.createElement("span");
+  note.className = "hdr-note";
+  note.textContent = "engcode serve · fixes reload automatically";
+  const close = document.createElement("button");
+  close.className = "close";
+  close.textContent = "\u00d7";
+  close.setAttribute("aria-label", "Dismiss");
+  close.addEventListener("click", () => {
+    overlay.remove();
+    overlay = null;
+  });
+  hdr.append(badge, title, note, close);
+  overlay.append(hdr);
+
+  const body = document.createElement("div");
+  body.className = "body";
+  for (const m of messages) {
+    const err = document.createElement("div");
+    err.className = "err";
+    const msg = document.createElement("p");
+    msg.className = "err-msg";
+    msg.textContent = m.message;
+    err.append(msg);
+    if (m.hint) {
+      const hint = document.createElement("p");
+      hint.className = "err-hint";
+      hint.textContent = "Try this: " + m.hint;
+      err.append(hint);
+    } else if (m.suggestion) {
+      const hint = document.createElement("p");
+      hint.className = "err-hint";
+      hint.textContent = "Try this: " + m.suggestion;
+      err.append(hint);
+    }
+    if (m.line != null) {
+      const frame = document.createElement("pre");
+      frame.className = "frame";
+      const ln = document.createElement("span");
+      ln.className = "ln";
+      ln.textContent = String(m.line);
+      const src = document.createElement("span");
+      src.className = "src";
+      if (m.column != null && m.length) {
+        src.textContent = " ";
+        const before = document.createElement("span");
+        before.textContent = m.before || "";
+        const mark = document.createElement("span");
+        mark.className = "mark";
+        mark.textContent = m.mark || "";
+        const after = document.createElement("span");
+        after.textContent = m.after || "";
+        src.append(before, mark, after);
+      } else {
+        src.textContent = " " + (m.source || "");
+      }
+      frame.append(ln, src);
+      err.append(frame);
+    }
+    body.append(err);
+  }
+  overlay.append(body);
+
+  const foot = document.createElement("div");
+  foot.className = "foot";
+  foot.textContent = "Save the file to try again — the page reloads when the build passes.";
+  overlay.append(foot);
 };
+
 events.addEventListener("reload", () => location.reload());
 events.addEventListener("build-error", (event) => {
   try {
     const messages = JSON.parse(event.data);
-    show(messages.join("\\n\\n"));
+    show(messages);
   } catch {
-    show("The build failed. Check the terminal for details.");
+    show([{ message: "The build failed. Check the terminal for details." }]);
   }
 });
 `;
@@ -1546,15 +1735,25 @@ function quotePath(value: string): string {
 }
 
 function toJson(diagnostics: Diagnostic[]): unknown[] {
-  return diagnostics.map((diagnostic) => ({
-    message: diagnostic.message,
-    line: diagnostic.span?.line ?? 1,
-    column: diagnostic.span?.column ?? 1,
-    length: diagnostic.span?.length ?? 1,
-    severity: diagnostic.severity,
-    suggestion: diagnostic.suggestion ?? null,
-    hint: diagnostic.hint ?? null,
-  }));
+  return diagnostics.map((diagnostic) => {
+    const span = diagnostic.span;
+    const sourceLine = span ? (span.file.lines[span.line - 1] ?? "") : "";
+    const column = span?.column ?? 1;
+    const length = Math.max(1, span?.length ?? 1);
+    return {
+      message: diagnostic.message,
+      line: span?.line ?? null,
+      column,
+      length,
+      severity: diagnostic.severity,
+      suggestion: diagnostic.suggestion ?? null,
+      hint: diagnostic.hint ?? null,
+      before: sourceLine.slice(0, Math.max(0, column - 1)),
+      mark: sourceLine.slice(Math.max(0, column - 1), Math.max(0, column - 1) + length),
+      after: sourceLine.slice(Math.max(0, column - 1) + length),
+      source: sourceLine,
+    };
+  });
 }
 
 interface EntryPoint {

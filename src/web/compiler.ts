@@ -547,10 +547,12 @@ export function compileWeb(
     return value;
   });
   const allowedHosts = (options.allowedHosts ?? []).map((host) => host.toLowerCase());
+  const hasDarkStyles =
+    themes.some((theme) => theme.dark) || styles.some((style) => style.dark);
   const js = [
     'import { startApp } from "./runtime.js";',
     `const definition = ${serialized};`,
-    `startApp(definition, { allowedHosts: ${JSON.stringify(allowedHosts)} });`,
+    `startApp(definition, { allowedHosts: ${JSON.stringify(allowedHosts)}, themeToggle: ${hasDarkStyles} });`,
     "",
   ].join("\n");
 

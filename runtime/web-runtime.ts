@@ -13,6 +13,8 @@ export interface RuntimeOptions {
   development?: boolean;
   /** Set to false in tests to keep frame loops from running forever. */
   startTimers?: boolean;
+  /** Add the light/dark toggle only when the program declares dark styles. */
+  themeToggle?: boolean;
 }
 
 interface NodeDefinition {
@@ -1748,7 +1750,7 @@ export function startApp(definition: AppDefinition, options: RuntimeOptions = {}
 
   bindEvents();
   render();
-  setupTheme();
+  if (options.themeToggle === true) setupTheme();
   route();
   if (options.startTimers !== false) startTimers();
 

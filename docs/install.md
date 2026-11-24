@@ -11,6 +11,8 @@ npm install -g engcode
 engcode --version
 ```
 
+`eng` is installed alongside `engcode` — `eng run main.eng` is a short form of `engcode run main.eng`.
+
 ### Windows (PowerShell)
 
 ```powershell

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question about the language
+    url: https://github.com/Isolatify/engcode/discussions
+    about: Ask how something works before filing an issue
+  - name: Documentation
+    url: https://github.com/Isolatify/engcode/tree/main/docs
+    about: The grammar, cheat sheet, and command reference live here
