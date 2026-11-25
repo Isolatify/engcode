@@ -239,7 +239,13 @@ After installation, no network is needed for the language, the CLI, the tutorial
 
 ## Editor support
 
-The VS Code extension lives in `editor/vscode`. Build and link the CLI first, then package the extension:
+The VS Code extension is published on the Marketplace — install it from VS Code's Extensions view or with:
+
+```text
+code --install-extension engcode.engcode
+```
+
+It lives in `editor/vscode`. Build and link the CLI first, then package the extension:
 
 ```text
 npm install
